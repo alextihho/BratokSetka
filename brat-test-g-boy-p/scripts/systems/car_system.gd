@@ -66,6 +66,7 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 	bg.size = Vector2(700, 1100)
 	bg.position = Vector2(10, 90)
 	bg.color = Color(0.05, 0.05, 0.15, 0.95)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	dealership_menu.add_child(bg)
 	
 	var title = Label.new()
@@ -142,6 +143,7 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 	info_bg.size = Vector2(660, 600)
 	info_bg.position = Vector2(30, y_pos)
 	info_bg.color = Color(0.1, 0.1, 0.2, 0.8)
+	info_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	dealership_menu.add_child(info_bg)
 	
 	var info_text = "ℹ️ АВТОСАЛОН\n\n"
@@ -194,6 +196,7 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 	bg.size = Vector2(700, 1100)
 	bg.position = Vector2(10, 90)
 	bg.color = Color(0.05, 0.05, 0.15, 0.98)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	selection_menu.add_child(bg)
 	
 	var title = Label.new()
@@ -220,13 +223,15 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		card_bg.size = Vector2(680, 220)
 		card_bg.position = Vector2(20, y_pos)
 		card_bg.color = Color(0.15, 0.15, 0.25, 1.0)
+		card_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 		selection_menu.add_child(card_bg)
-		
+
 		# Placeholder для изображения машины
 		var car_image_bg = ColorRect.new()
 		car_image_bg.size = Vector2(200, 150)
 		car_image_bg.position = Vector2(40, y_pos + 20)
 		car_image_bg.color = Color(0.2, 0.2, 0.3, 1.0)
+		car_image_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 		selection_menu.add_child(car_image_bg)
 		
 		var car_icon = Label.new()
@@ -388,6 +393,7 @@ func show_repair_menu(main_node: Node, player_data: Dictionary, dealership_menu:
 	dialog_bg.size = Vector2(600, 400)
 	dialog_bg.position = Vector2(60, 440)
 	dialog_bg.color = Color(0.1, 0.1, 0.15, 0.98)
+	dialog_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	confirm_layer.add_child(dialog_bg)
 	
 	var title = Label.new()

@@ -58,6 +58,7 @@ func create_top_panel(parent_node: Node):
 	avatar_btn.position = Vector2(20, 20)
 	avatar_btn.name = "AvatarClickButton"
 	avatar_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	avatar_btn.z_index = 100  # ✅ ФИКС: Поверх топ-панели
 	
 	# ✅ Делаем кнопку СЛЕГКА видимой для отладки
 	var debug_style = StyleBoxFlat.new()
