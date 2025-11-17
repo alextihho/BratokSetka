@@ -1,131 +1,101 @@
-# log_system.gd - Система логов с двумя панелями
+# log_system.gd - Система логов с правильным UI
 extends Node
 
 signal log_added(message: String, category: String)
 
-# Массивы логов
-var game_logs: Array = []  # Художественные логи (события игры)
-var tech_logs: Array = []  # Технические логи (print, debug)
+# Массив всех логов
+var all_logs: Array = []
 var max_logs: int = 100
 
 # UI элементы
 var log_panel: CanvasLayer = null
-var game_log_container: VBoxContainer = null  # СПРАВА - художественные
-var tech_log_container: VBoxContainer = null  # В ЦЕНТРЕ - технические
+var log_container: VBoxContainer = null
 var is_visible: bool = true
 
 func _ready():
-	print("📜 Система логов готова (2 панели)")
-
+	print("📜 Система логов готова")
+	
 	# Создаем UI сразу
 	create_log_ui()
-
+	
 	# ✅ ТЕСТОВЫЕ ЛОГИ для проверки
-	await get_tree().create_timer(0.5).timeout
+	await get_tree().create_timer(0.5).timeout  # Ждём инициализацию UI
 	add_news_log("Игра запущена - Тверь, 02.03.1992")
 	add_success_log("Система логов работает!")
-	add_system_log("Техническая система инициализирована")
+	add_attack_log("Тестовое сообщение об опасности")
 
-# ✅ Создание UI логов (2 панели)
+# ✅ Создание UI логов (внизу справа, как на скриншоте 2)
 func create_log_ui():
 	# CanvasLayer для логов
 	log_panel = CanvasLayer.new()
 	log_panel.name = "LogPanel"
-	log_panel.layer = 40
+	log_panel.layer = 40  # ✅ Ниже UI (50), но выше карты
 	add_child(log_panel)
+	
+	# ✅ Фон панели логов (темно-серый) - СПРАВА ВНИЗУ
+	var bg = ColorRect.new()
+	bg.size = Vector2(350, 500)  
+	bg.position = Vector2(360, 720)  # ✅ Поднято на 60px вверх
+	bg.color = Color(0.15, 0.15, 0.15, 0.95)
+	bg.name = "LogBackground"
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики по карте
+	log_panel.add_child(bg)
+	
+	# Заголовок
+	var title = Label.new()
+	title.text = "📜 ЛОГИ СОБЫТИЙ"
+	title.position = Vector2(380, 730)  # ✅ Поднято на 60px
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики
+	log_panel.add_child(title)
+	
+	# ScrollContainer для логов
+	var scroll = ScrollContainer.new()
+	scroll.position = Vector2(370, 760)  # ✅ Поднято на 60px
+	scroll.size = Vector2(330, 450)
+	scroll.name = "LogScroll"
+	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики по карте
+	log_panel.add_child(scroll)
+	
+	# VBoxContainer для логов
+	log_container = VBoxContainer.new()
+	log_container.name = "LogContainer"
+	log_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(log_container)
 
-	# ========== ПАНЕЛЬ СПРАВА: ХУДОЖЕСТВЕННЫЕ ЛОГИ (СОБЫТИЯ ИГРЫ) ==========
-	var game_bg = ColorRect.new()
-	game_bg.size = Vector2(340, 500)
-	game_bg.position = Vector2(370, 720)
-	game_bg.color = Color(0.1, 0.15, 0.1, 0.95)
-	game_bg.name = "GameLogBackground"
-	game_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(game_bg)
-
-	var game_title = Label.new()
-	game_title.text = "📜 СОБЫТИЯ"
-	game_title.position = Vector2(470, 730)
-	game_title.add_theme_font_size_override("font_size", 16)
-	game_title.add_theme_color_override("font_color", Color(0.9, 1.0, 0.7))
-	game_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(game_title)
-
-	var game_scroll = ScrollContainer.new()
-	game_scroll.position = Vector2(380, 760)
-	game_scroll.size = Vector2(320, 450)
-	game_scroll.name = "GameLogScroll"
-	game_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(game_scroll)
-
-	game_log_container = VBoxContainer.new()
-	game_log_container.name = "GameLogContainer"
-	game_log_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	game_scroll.add_child(game_log_container)
-
-	# ========== ПАНЕЛЬ В ЦЕНТРЕ: ТЕХНИЧЕСКИЕ ЛОГИ ==========
-	var tech_bg = ColorRect.new()
-	tech_bg.size = Vector2(350, 300)
-	tech_bg.position = Vector2(10, 920)
-	tech_bg.color = Color(0.1, 0.1, 0.15, 0.9)
-	tech_bg.name = "TechLogBackground"
-	tech_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(tech_bg)
-
-	var tech_title = Label.new()
-	tech_title.text = "🔧 ТЕХН. ЛОГИ"
-	tech_title.position = Vector2(140, 930)
-	tech_title.add_theme_font_size_override("font_size", 14)
-	tech_title.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0))
-	tech_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(tech_title)
-
-	var tech_scroll = ScrollContainer.new()
-	tech_scroll.position = Vector2(20, 960)
-	tech_scroll.size = Vector2(330, 250)
-	tech_scroll.name = "TechLogScroll"
-	tech_scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	log_panel.add_child(tech_scroll)
-
-	tech_log_container = VBoxContainer.new()
-	tech_log_container.name = "TechLogContainer"
-	tech_log_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tech_scroll.add_child(tech_log_container)
-
+# ✅ Добавить лог с правильными цветами
 func add_log(message: String, category: String = "info"):
-	var time_system = get_node_or_null("/root/TimeSystem")
-	var time_str = "??:??"
-	if time_system:
-		time_str = time_system.get_time_string()
-
+	var timestamp = Time.get_datetime_dict_from_system()
 	var log_entry = {
 		"message": message,
 		"category": category,
-		"time": time_str
+		"time": "%02d:%02d" % [timestamp.hour, timestamp.minute]
 	}
-
-	# Разделяем логи
-	if category in ["debug", "system", "movement"]:
-		tech_logs.insert(0, log_entry)
-		if tech_logs.size() > max_logs:
-			tech_logs.resize(max_logs)
-		update_tech_log_display()
-	else:
-		game_logs.insert(0, log_entry)
-		if game_logs.size() > max_logs:
-			game_logs.resize(max_logs)
-		update_game_log_display()
-
+	
+	all_logs.insert(0, log_entry)
+	
+	if all_logs.size() > max_logs:
+		all_logs.resize(max_logs)
+	
 	log_added.emit(message, category)
+	
+	# Обновляем UI
+	update_log_display()
+	
 	print("📜 [%s] %s: %s" % [log_entry["time"], category.to_upper(), message])
 
+# ✅ Специализированные методы
 func add_news_log(message: String):
+	"""Городские новости - бежево-желтый"""
 	add_log(message, "news")
 
 func add_attack_log(message: String):
+	"""Атаки, нападения - красный"""
 	add_log(message, "attack")
 
 func add_success_log(message: String):
+	"""Удача, лечение, заработок - зеленый"""
 	add_log(message, "success")
 
 func add_combat_log(message: String):
@@ -143,76 +113,54 @@ func add_event_log(message: String):
 func add_movement_log(message: String):
 	add_log(message, "movement")
 
-func add_debug_log(message: String):
-	add_log(message, "debug")
-
-func add_system_log(message: String):
-	add_log(message, "system")
-
-func update_game_log_display():
-	if not game_log_container or not is_instance_valid(game_log_container):
+# ✅ Обновление отображения
+func update_log_display():
+	if not log_container or not is_instance_valid(log_container):
 		return
-
-	for child in game_log_container.get_children():
+	
+	# Очищаем старые записи
+	for child in log_container.get_children():
 		child.queue_free()
-
-	var logs_to_show = min(20, game_logs.size())
-
+	
+	# Показываем последние 20 логов
+	var logs_to_show = min(20, all_logs.size())
+	
 	for i in range(logs_to_show):
-		var log_entry = game_logs[i]
+		var log_entry = all_logs[i]
 		var log_label = Label.new()
-
+		
+		# Форматируем текст
 		var display_text = "[%s] %s" % [log_entry["time"], log_entry["message"]]
 		log_label.text = display_text
-
+		
+		# ✅ ПРАВИЛЬНЫЕ ЦВЕТА как просили
 		var color = get_category_color(log_entry["category"])
 		log_label.add_theme_color_override("font_color", color)
 		log_label.add_theme_font_size_override("font_size", 12)
 		log_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-		log_label.custom_minimum_size = Vector2(300, 0)
+		log_label.custom_minimum_size = Vector2(360, 0)
+		
+		log_container.add_child(log_label)
 
-		game_log_container.add_child(log_label)
-
-func update_tech_log_display():
-	if not tech_log_container or not is_instance_valid(tech_log_container):
-		return
-
-	for child in tech_log_container.get_children():
-		child.queue_free()
-
-	var logs_to_show = min(15, tech_logs.size())
-
-	for i in range(logs_to_show):
-		var log_entry = tech_logs[i]
-		var log_label = Label.new()
-
-		var display_text = "[%s] %s" % [log_entry["time"], log_entry["message"]]
-		log_label.text = display_text
-
-		log_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.8))
-		log_label.add_theme_font_size_override("font_size", 11)
-		log_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-		log_label.custom_minimum_size = Vector2(310, 0)
-
-		tech_log_container.add_child(log_label)
-
+# ✅ ПРАВИЛЬНЫЕ ЦВЕТА как просили
 func get_category_color(category: String) -> Color:
 	match category:
-		"news":
-			return Color(0.95, 0.85, 0.55)
-		"attack", "combat":
-			return Color(1.0, 0.3, 0.3)
-		"success", "money":
-			return Color(0.3, 1.0, 0.3)
+		"news":  # Городские новости
+			return Color(0.95, 0.85, 0.55)  # Бежево-желтый
+		"attack", "combat":  # Нападения, атаки
+			return Color(1.0, 0.3, 0.3)  # Красный
+		"success", "money":  # Удача, заработок, лечение
+			return Color(0.3, 1.0, 0.3)  # Зеленый
 		"quest":
-			return Color(0.3, 0.8, 1.0)
+			return Color(0.3, 0.8, 1.0)  # Голубой
 		"event":
-			return Color(1.0, 0.7, 0.3)
-		"movement", "debug", "system":
-			return Color(0.7, 0.7, 0.7)
+			return Color(1.0, 0.7, 0.3)  # Оранжевый
+		"movement":
+			return Color(0.7, 0.7, 0.7)  # Серый
 		_:
-			return Color(0.9, 0.9, 0.9)
+			return Color(0.9, 0.9, 0.9)  # Почти белый
 
+# Показать/скрыть логи
 func toggle_logs():
 	if log_panel:
 		is_visible = !is_visible
@@ -228,21 +176,19 @@ func hide_logs():
 		is_visible = false
 		log_panel.visible = false
 
+# Получить последние N логов
 func get_recent_logs(count: int = 10) -> Array:
-	return game_logs.slice(0, min(count, game_logs.size()))
+	return all_logs.slice(0, min(count, all_logs.size()))
 
+# Очистить логи
 func clear_logs():
-	game_logs.clear()
-	tech_logs.clear()
-	update_game_log_display()
-	update_tech_log_display()
+	all_logs.clear()
+	update_log_display()
 
+# Получить логи по категории
 func get_logs_by_category(category: String) -> Array:
 	var filtered = []
-	for log in game_logs:
-		if log["category"] == category:
-			filtered.append(log)
-	for log in tech_logs:
+	for log in all_logs:
 		if log["category"] == category:
 			filtered.append(log)
 	return filtered
