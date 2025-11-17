@@ -90,7 +90,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 		rest_btn.position = Vector2(480, y_pos + 25)
 		rest_btn.text = "ОТДОХНУТЬ"
 		rest_btn.disabled = player_data["balance"] < option["cost"]
-		
+		rest_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0.3, 0.6, 0.3, 1.0) if not rest_btn.disabled else Color(0.3, 0.3, 0.3, 1.0)
 		rest_btn.add_theme_stylebox_override("normal", style)
@@ -141,7 +142,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 		party_btn.custom_minimum_size = Vector2(660, 60)
 		party_btn.position = Vector2(30, y_pos)
 		party_btn.text = "🍻 БУХАТЬ С БАНДОЙ"
-		
+		party_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 		var style_party = StyleBoxFlat.new()
 		style_party.bg_color = Color(0.6, 0.3, 0.2, 1.0)
 		party_btn.add_theme_stylebox_override("normal", style_party)
@@ -160,7 +162,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 	close_btn.custom_minimum_size = Vector2(680, 50)
 	close_btn.position = Vector2(20, 1100)
 	close_btn.text = "УЙТИ"
-	
+	close_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
@@ -294,7 +297,8 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	party_btn.custom_minimum_size = Vector2(300, 70)
 	party_btn.position = Vector2(210, 750)
 	party_btn.text = "🍺 БУХАТЬ!"
-	
+	party_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_party = StyleBoxFlat.new()
 	style_party.bg_color = Color(0.7, 0.3, 0.2, 1.0)
 	party_btn.add_theme_stylebox_override("normal", style_party)
@@ -314,7 +318,8 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	cancel_btn.custom_minimum_size = Vector2(640, 50)
 	cancel_btn.position = Vector2(40, 960)
 	cancel_btn.text = "ОТМЕНА"
-	
+	cancel_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_cancel = StyleBoxFlat.new()
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)

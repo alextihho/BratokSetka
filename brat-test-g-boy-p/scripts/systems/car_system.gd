@@ -102,7 +102,8 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 	choose_car_btn.custom_minimum_size = Vector2(660, 80)
 	choose_car_btn.position = Vector2(30, y_pos)
 	choose_car_btn.text = "🚗 ВЫБОР МАШИНЫ"
-	
+	choose_car_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_choose = StyleBoxFlat.new()
 	style_choose.bg_color = Color(0.2, 0.5, 0.8, 1.0)
 	choose_car_btn.add_theme_stylebox_override("normal", style_choose)
@@ -122,7 +123,8 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 	repair_btn.position = Vector2(30, y_pos)
 	repair_btn.text = "🔧 ПОЧИНИТЬ МАШИНУ"
 	repair_btn.disabled = not player_data.get("car") or player_data.get("car_condition", 100) >= 100
-	
+	repair_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_repair = StyleBoxFlat.new()
 	if repair_btn.disabled:
 		style_repair.bg_color = Color(0.3, 0.3, 0.3, 1.0)
@@ -168,7 +170,8 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 	close_btn.custom_minimum_size = Vector2(680, 50)
 	close_btn.position = Vector2(20, 1100)
 	close_btn.text = "УЙТИ"
-	
+	close_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
@@ -278,7 +281,8 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		var select_btn = Button.new()
 		select_btn.custom_minimum_size = Vector2(180, 50)
 		select_btn.position = Vector2(500, y_pos + 150)
-		
+		select_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 		# Проверяем есть ли уже эта машина
 		if player_data.get("car") == car_id:
 			select_btn.text = "✓ КУПЛЕНА"
@@ -286,7 +290,7 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		else:
 			select_btn.text = "КУПИТЬ"
 			select_btn.disabled = player_data["balance"] < car["price"]
-		
+
 		var style_select = StyleBoxFlat.new()
 		if select_btn.disabled:
 			style_select.bg_color = Color(0.3, 0.3, 0.3, 1.0)
@@ -310,7 +314,8 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 	close_btn.custom_minimum_size = Vector2(680, 50)
 	close_btn.position = Vector2(20, 1100)
 	close_btn.text = "НАЗАД"
-	
+	close_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
@@ -425,7 +430,8 @@ func show_repair_menu(main_node: Node, player_data: Dictionary, dealership_menu:
 	repair_btn.position = Vector2(100, 730)
 	repair_btn.text = "ПОЧИНИТЬ"
 	repair_btn.disabled = player_data["balance"] < repair_cost
-	
+	repair_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_repair = StyleBoxFlat.new()
 	if repair_btn.disabled:
 		style_repair.bg_color = Color(0.3, 0.3, 0.3, 1.0)
@@ -443,7 +449,8 @@ func show_repair_menu(main_node: Node, player_data: Dictionary, dealership_menu:
 	cancel_btn.custom_minimum_size = Vector2(250, 60)
 	cancel_btn.position = Vector2(370, 730)
 	cancel_btn.text = "ОТМЕНА"
-	
+	cancel_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_cancel = StyleBoxFlat.new()
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
