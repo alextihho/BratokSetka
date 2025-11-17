@@ -21,6 +21,12 @@ func initialize(parent_node: Node, p_player_data: Dictionary):
 	if police_system:
 		police_system.ua_changed.connect(func(_ua): update_ui())
 
+	# ✅ НОВОЕ: Подписываемся на изменение времени
+	var time_system = get_node_or_null("/root/TimeSystem")
+	if time_system:
+		time_system.time_changed.connect(func(_h, _m): update_time_display())
+		print("✅ ui_controller подписан на time_changed")
+
 func create_top_panel(parent_node: Node):
 	var top_panel = ColorRect.new()
 	top_panel.size = Vector2(720, 120)
@@ -229,6 +235,9 @@ func update_ui():
 		ua_label.text = "🚔 УА: %d (%s)" % [ua, police_system.get_ua_status()]
 		ua_label.add_theme_color_override("font_color", ua_color)
 
+	# ✅ НОВОЕ: Обновление времени
+	update_time_display()
+
 func show_message(text: String, parent_node: Node):
 	var message = Label.new()
 	message.text = text
@@ -272,3 +281,12 @@ func show_floating_text(text: String, position: Vector2, color: Color, parent_no
 
 func get_ui_layer() -> CanvasLayer:
 	return ui_layer
+
+# ✅ НОВОЕ: Обновление отображения времени
+func update_time_display():
+	var date_label = ui_layer.get_node_or_null("DateLabel")
+	if date_label:
+		var time_sys = get_node_or_null("/root/TimeSystem")
+		if time_sys:
+			date_label.text = time_sys.get_date_time_string()
+			print("⏰ DateLabel обновлен: " + date_label.text)
