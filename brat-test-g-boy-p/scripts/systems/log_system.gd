@@ -66,11 +66,16 @@ func create_log_ui():
 
 # ✅ Добавить лог с правильными цветами
 func add_log(message: String, category: String = "info"):
-	var timestamp = Time.get_datetime_dict_from_system()
+	# ✅ ИСПРАВЛЕНО: Используем игровое время
+	var time_system = get_node_or_null("/root/TimeSystem")
+	var time_str = "??:??"
+	if time_system:
+		time_str = time_system.get_time_string()
+
 	var log_entry = {
 		"message": message,
 		"category": category,
-		"time": "%02d:%02d" % [timestamp.hour, timestamp.minute]
+		"time": time_str
 	}
 	
 	all_logs.insert(0, log_entry)

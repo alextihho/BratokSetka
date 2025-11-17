@@ -30,6 +30,7 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 	bg.size = Vector2(700, 1100)
 	bg.position = Vector2(10, 90)
 	bg.color = Color(0.15, 0.1, 0.05, 0.95)  # Коричневатый оттенок
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	bar_menu.add_child(bg)
 	
 	var title = Label.new()
@@ -67,6 +68,7 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 		card_bg.size = Vector2(680, 100)
 		card_bg.position = Vector2(20, y_pos)
 		card_bg.color = Color(0.2, 0.15, 0.1, 1.0)
+		card_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 		bar_menu.add_child(card_bg)
 		
 		var option_name = Label.new()
@@ -216,6 +218,7 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	bg.size = Vector2(680, 800)
 	bg.position = Vector2(20, 240)
 	bg.color = Color(0.15, 0.1, 0.05, 0.98)
+	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	party_menu.add_child(bg)
 	
 	var title = Label.new()
@@ -241,11 +244,12 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	
 	# Ползунок
 	var slider_value = {"amount": 0}
-	
+
 	var slider_bg = ColorRect.new()
 	slider_bg.size = Vector2(620, 60)
 	slider_bg.position = Vector2(50, 450)
 	slider_bg.color = Color(0.2, 0.2, 0.2, 1.0)
+	slider_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
 	party_menu.add_child(slider_bg)
 	
 	var slider = HSlider.new()

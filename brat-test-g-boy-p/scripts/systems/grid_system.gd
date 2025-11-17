@@ -78,13 +78,20 @@ func assign_district(x: int, y: int) -> String:
 	return "Спальный"
 
 func _draw_grid():
-	# ✅ ФИКС: Здания (ПЕРЕМЕЩЕНО ВВЕРХ, чтобы рисоваться всегда)
+	# ✅ ФИКС: Здания рисуются всегда
 	for square_id in grid_squares:
 		var square = grid_squares[square_id]
 		if square["building"] != null:
 			var building_pos = square["position"] + Vector2(square_size / 2 - 12, square_size / 2 - 12)
 			draw_control.draw_rect(Rect2(building_pos, Vector2(24, 24)), Color.YELLOW, true)
 			draw_control.draw_rect(Rect2(building_pos, Vector2(24, 24)), Color.ORANGE, false, 3.0)
+
+	# ✅ ФИКС: Игрок рисуется всегда (даже когда сетка выключена)
+	if player_square != "" and grid_squares.has(player_square):
+		var square = grid_squares[player_square]
+		var center = square["position"] + Vector2(square_size / 2, square_size / 2)
+		draw_control.draw_circle(center, 18, Color.RED)
+		draw_control.draw_circle(center, 18, Color.WHITE, false, 4.0)
 
 	if not grid_visible:
 		return
@@ -122,13 +129,6 @@ func _draw_grid():
 		var square = grid_squares[selected_square]
 		draw_control.draw_rect(Rect2(square["position"], Vector2(square_size, square_size)), Color(1.0, 1.0, 0.0, 0.4), true)
 		draw_control.draw_rect(Rect2(square["position"], Vector2(square_size, square_size)), Color.YELLOW, false, 4.0)
-	
-	# Игрок
-	if player_square != "" and grid_squares.has(player_square):
-		var square = grid_squares[player_square]
-		var center = square["position"] + Vector2(square_size / 2, square_size / 2)
-		draw_control.draw_circle(center, 18, Color.RED)
-		draw_control.draw_circle(center, 18, Color.WHITE, false, 4.0)
 
 func get_square_at_position(pos: Vector2) -> String:
 	print("🎯 КЛИК: " + str(pos))
