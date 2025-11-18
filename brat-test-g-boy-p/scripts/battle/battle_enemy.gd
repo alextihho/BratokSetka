@@ -188,6 +188,7 @@ func get_equipment_for_faction(faction: String, level: int) -> Dictionary:
 				police_weapons.append("СВД")
 
 			equipment["weapon"] = police_weapons[randi() % police_weapons.size()]
+			print("🔍 МЕНТ level=%d: выбрано оружие '%s' из %s" % [level, equipment["weapon"], police_weapons])
 
 			# Броня: бронежилеты
 			var police_armor = ["Камуфляж"]
@@ -205,17 +206,31 @@ func get_equipment_for_faction(faction: String, level: int) -> Dictionary:
 
 # ===== ПРИМЕНЕНИЕ ЭКИПИРОВКИ =====
 func apply_equipment(enemy: Dictionary) -> void:
+	print("🔍 apply_equipment: enemy=%s, faction=%s, level=%d, items_db=%s" % [
+		enemy.get("name", "???"),
+		enemy.get("faction", "???"),
+		enemy.get("level", 0),
+		"OK" if items_db else "NULL"
+	])
+
 	if not items_db:
+		print("⚠️ ItemsDB отсутствует! Экипировка не применена")
 		return
 
 	var faction = enemy.get("faction", "street")
 	var level = enemy.get("level", 1)
 
 	var equipment = get_equipment_for_faction(faction, level)
+	print("🔍 Выбрана экипировка: weapon=%s, armor=%s, helmet=%s" % [
+		equipment.get("weapon", "none"),
+		equipment.get("armor", "none"),
+		equipment.get("helmet", "none")
+	])
 
 	# Применяем оружие
 	if equipment["weapon"]:
 		var weapon_data = items_db.get_item(equipment["weapon"])
+		print("🔍 Ищем '%s' в ItemsDB: %s" % [equipment["weapon"], "найдено" if weapon_data else "НЕ НАЙДЕНО"])
 		if weapon_data:
 			enemy["equipped_weapon"] = equipment["weapon"]
 
