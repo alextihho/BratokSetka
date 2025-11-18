@@ -200,10 +200,11 @@ func handle_location_action(action_index: int):
 
 	# ✅ ОБРАБОТКА АВТОСАЛОНА
 	if current_location == "АВТОСАЛОН":
-		if car_system:
+		var car_sys = get_node_or_null("/root/CarSystem")  # ✅ ФИКС: Получаем напрямую!
+		if car_sys:
 			print("✅ Передаём управление CarSystem")
 			close_location_menu()
-			car_system.show_car_dealership_menu(self, player_data)
+			car_sys.show_car_dealership_menu(self, player_data)
 		else:
 			print("❌ CarSystem не загружен!")
 			show_message("❌ Автосалон недоступен")
@@ -212,10 +213,11 @@ func handle_location_action(action_index: int):
 	# ✅ ОБРАБОТКА БАРА
 	if current_location == "БАР":
 		if action_index == 0 or action_index == 1:  # Отдохнуть или Бухать
-			if bar_system:
+			var bar_sys = get_node_or_null("/root/BarSystem")  # ✅ ФИКС: Получаем напрямую!
+			if bar_sys:
 				print("✅ Передаём управление BarSystem")
 				close_location_menu()
-				bar_system.show_bar_menu(self, player_data, gang_members)
+				bar_sys.show_bar_menu(self, player_data, gang_members)
 			else:
 				print("❌ BarSystem не загружен!")
 				show_message("❌ Бар недоступен")
