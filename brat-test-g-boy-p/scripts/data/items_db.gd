@@ -19,8 +19,9 @@ var items = {
 	"Кожанка": {"type": "armor", "defense": 5, "price": 200, "level": 3, "description": "Толстая кожанка. Защита +5"},
 	"Армейская куртка": {"type": "armor", "defense": 7, "price": 350, "level": 4, "description": "Военная куртка. Защита +7"},
 	"Камуфляж": {"type": "armor", "defense": 8, "price": 400, "level": 4, "description": "Камуфляжная форма. Защита +8"},
-	"Бронежилет": {"type": "armor", "defense": 15, "price": 800, "level": 6, "description": "Военный бронежилет. Защита +15"},
-	"Тяжёлый бронежилет": {"type": "armor", "defense": 20, "price": 1500, "level": 8, "description": "Усиленный бронежилет. Защита +20"},
+	"Легкий бронежилет": {"type": "armor", "defense": 10, "price": 600, "level": 5, "description": "Легкий бронежилет 1 класса. Защита +10"},
+	"Бронежилет": {"type": "armor", "defense": 15, "price": 1200, "level": 6, "description": "Военный бронежилет 2 класса. Защита +15"},
+	"Тяжёлый бронежилет": {"type": "armor", "defense": 20, "price": 2500, "level": 8, "description": "Усиленный бронежилет 3 класса. Защита +20"},
 
 	# === БЛИЖНИЙ БОЙ ===
 	"Кулаки": {"type": "melee", "damage": 2, "strength_req": 0, "price": 0, "level": 1, "description": "Голыми руками. Урон +2"},
@@ -48,7 +49,10 @@ var items = {
 	"Рация": {"type": "gadget", "effect": "связь", "price": 150, "level": 2, "description": "Связь на расстоянии"},
 	"Телефон": {"type": "gadget", "effect": "связь", "price": 500, "level": 3, "description": "Мобильный телефон. Престиж!"},
 	"GPS-трекер": {"type": "gadget", "effect": "навигация", "price": 800, "level": 4, "description": "Высокие технологии"},
-	"Отмычка": {"type": "gadget", "effect": "взлом", "price": 100, "level": 2, "description": "Для взлома замков"},
+	"Отмычка": {"type": "gadget", "effect": "взлом", "price": 250, "level": 2, "description": "Набор отмычек. Открывает замки"},
+	"Болторез": {"type": "gadget", "effect": "взлом", "price": 400, "level": 3, "description": "Режет замки и цепи"},
+	"Набор для угона": {"type": "gadget", "effect": "угон", "price": 800, "level": 4, "description": "Инструменты для угона авто"},
+	"Дубликатор ключей": {"type": "gadget", "effect": "взлом", "price": 500, "level": 3, "description": "Копирует ключи за минуту"},
 
 	# === РАСХОДНИКИ ===
 	"Пиво": {"type": "consumable", "price": 30, "level": 1, "description": "Восстанавливает 10 HP", "effect": "heal", "value": 10},

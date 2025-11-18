@@ -539,15 +539,16 @@ func sell_item(item_name: String, player_data: Dictionary, main_node: Node):
 func show_black_market(player_data: Dictionary, main_node: Node):
 	var market_menu = CanvasLayer.new()
 	market_menu.name = "BlackMarketMenu"
-	market_menu.layer = 100
+	market_menu.layer = 210  # ✅ ВЫШЕ всего остального
 	main_node.add_child(market_menu)
 	current_building_menu = market_menu
 
-	# Overlay
+	# ✅ Overlay для блокировки кликов на карту
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(720, 1280)
+	overlay.position = Vector2(0, 0)
 	overlay.color = Color(0, 0, 0, 0.85)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ Блокирует клики
 	market_menu.add_child(overlay)
 
 	# Фон меню
