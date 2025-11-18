@@ -150,9 +150,9 @@ func perform_attack() -> Dictionary:
 	
 	# Снижение морали
 	target["morale"] = max(10, target["morale"] - randi_range(5, 15))
-	
-	# Проверка обморока/смерти
-	check_fighter_status(target)
+
+	# Проверка обморока/смерти с отслеживанием убийств
+	check_fighter_status(target, attacker)
 	
 	# Следующий атакующий (цель НЕ сбрасывается!)
 	selected_bodypart = ""
@@ -192,21 +192,52 @@ func apply_crit_effects(target: Dictionary, effects: Array) -> Array:
 	
 	return applied
 
-func check_fighter_status(fighter: Dictionary):
+func check_fighter_status(fighter: Dictionary, attacker: Dictionary = {}):
 	if fighter["hp"] <= 0:
 		var excess_damage = abs(fighter["hp"])
-		
+		var was_alive = fighter.get("alive", true)
+
 		if excess_damage <= (5 if not fighter.get("is_player", false) else 1):
 			fighter["alive"] = false
 			fighter["hp"] = 0
 		else:
 			fighter["alive"] = false
 			fighter["hp"] = 0
-		
+
+		# ✅ НОВОЕ: Отслеживание убийств
+		if was_alive and not fighter["alive"] and attacker.size() > 0:
+			# Только если атакующий из команды игрока
+			if player_team.has(attacker):
+				# Инициализируем stats если нет
+				if not attacker.has("stats"):
+					attacker["stats"] = {
+						"kills": {"bandits": 0, "civilians": 0, "cops": 0, "swat": 0},
+						"robberies": 0, "carjackings": 0, "lockpicks": 0, "lost_members": 0
+					}
+
+				# Определяем тип убитого по faction
+				var kill_type = "bandits"  # по умолчанию
+				var faction = fighter.get("faction", "street")
+
+				match faction:
+					"street", "criminal", "security":
+						kill_type = "bandits"
+					"police":
+						# Различаем ментов и ОМОН по имени
+						if "ОМОН" in fighter.get("name", ""):
+							kill_type = "swat"
+						else:
+							kill_type = "cops"
+					_:
+						kill_type = "civilians"
+
+				attacker["stats"]["kills"][kill_type] += 1
+				print("📊 %s: +1 убийство (%s)" % [attacker["name"], kill_type])
+
 		# Если выбранная цель умерла - сбрасываем выбор
 		if selected_target == fighter:
 			selected_target = null
-		
+
 		var team = player_team if (fighter.get("is_player", false) or player_team.has(fighter)) else enemy_team
 		for member in team:
 			if member["alive"]:
@@ -392,7 +423,7 @@ func auto_attack_for_gang_member(attacker: Dictionary):
 	var final_damage = max(1, damage - target["defense"])
 	target["hp"] -= final_damage
 	target["morale"] = max(10, target["morale"] - randi_range(5, 15))
-	
+
 	# ✅ ЛОГ: Успешная атака члена банды
 	var battle = get_parent()
 	if battle and battle.has_method("add_to_log"):
@@ -402,8 +433,8 @@ func auto_attack_for_gang_member(attacker: Dictionary):
 			bodypart["name"],
 			final_damage
 		])
-	
-	check_fighter_status(target)
+
+	check_fighter_status(target, attacker)
 	next_attacker()
 
 # ========== ПРОВЕРКА ОКОНЧАНИЯ БОЯ ==========
