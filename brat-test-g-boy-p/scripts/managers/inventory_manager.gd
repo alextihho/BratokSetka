@@ -3,15 +3,30 @@ extends Node
 
 # ✅ ГЛАВНАЯ ФУНКЦИЯ для открытия инвентаря члена банды
 func show_inventory_for_member(main_node: Node, member_index: int, gang_members: Array, player_data: Dictionary):
-	# ✅ ПРОВЕРКА: Инициализируем все необходимые поля
-	if not player_data.has("equipment"):
-		player_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
-
-	if not player_data.has("inventory"):
-		player_data["inventory"] = []
-
-	if not player_data.has("pockets"):
-		player_data["pockets"] = [null, null, null]
+	# ✅ ОПРЕДЕЛЯЕМ ПРАВИЛЬНЫЙ СЛОВАРЬ ДАННЫХ
+	var current_data: Dictionary
+	if member_index == 0:
+		current_data = player_data
+		# Инициализируем поля игрока
+		if not player_data.has("equipment"):
+			player_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+		if not player_data.has("inventory"):
+			player_data["inventory"] = []
+		if not player_data.has("pockets"):
+			player_data["pockets"] = [null, null, null]
+	else:
+		# Инвентарь члена банды
+		if gang_members.size() > member_index:
+			current_data = gang_members[member_index]
+			# Инициализируем поля члена банды
+			if not current_data.has("equipment"):
+				current_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+			if not current_data.has("inventory"):
+				current_data["inventory"] = []
+			if not current_data.has("pockets"):
+				current_data["pockets"] = [null, null, null]
+		else:
+			current_data = player_data  # Fallback
 
 	# Создаем экземпляр меню инвентаря
 	var inv_menu_script = load("res://scripts/ui/inventory_menu.gd")
@@ -22,13 +37,13 @@ func show_inventory_for_member(main_node: Node, member_index: int, gang_members:
 	# Настраиваем меню
 	inv_menu.setup(player_data, member_index, gang_members)
 
-	# Обрабатываем клики по предметам
+	# Обрабатываем клики по предметам - передаем ПРАВИЛЬНЫЙ словарь данных!
 	inv_menu.item_clicked.connect(func(item_name, from_pocket, pocket_index):
-		show_item_popup(main_node, item_name, from_pocket, pocket_index, player_data, inv_menu)
+		show_item_popup(main_node, item_name, from_pocket, pocket_index, current_data, inv_menu, member_index, gang_members, player_data)
 	)
 
 # Показать попап действий с предметом
-func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pocket_index: int, player_data: Dictionary, inv_menu: CanvasLayer):
+func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pocket_index: int, current_data: Dictionary, inv_menu: CanvasLayer, member_index: int, gang_members: Array, player_data: Dictionary):
 	var items_db = get_node("/root/ItemsDB")
 	if not items_db:
 		return
@@ -80,10 +95,10 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 		use_btn.text = "ИСПОЛЬЗОВАТЬ"
 		use_btn.add_theme_font_size_override("font_size", 20)
 		use_btn.pressed.connect(func():
-			use_item(item_name, from_pocket, pocket_index, player_data, main_node)
+			use_item(item_name, from_pocket, pocket_index, current_data, main_node)
 			popup.queue_free()
 			inv_menu.queue_free()
-			show_inventory_for_member(main_node, 0, main_node.gang_members, player_data)
+			show_inventory_for_member(main_node, member_index, gang_members, player_data)
 		)
 		popup.add_child(use_btn)
 		btn_y += 70
@@ -95,10 +110,10 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 		equip_btn.text = "ЭКИПИРОВАТЬ"
 		equip_btn.add_theme_font_size_override("font_size", 20)
 		equip_btn.pressed.connect(func():
-			equip_item(item_name, from_pocket, pocket_index, player_data, main_node)
+			equip_item(item_name, from_pocket, pocket_index, current_data, main_node, member_index, player_data)
 			popup.queue_free()
 			inv_menu.queue_free()
-			show_inventory_for_member(main_node, 0, main_node.gang_members, player_data)
+			show_inventory_for_member(main_node, member_index, gang_members, player_data)
 		)
 		popup.add_child(equip_btn)
 		btn_y += 70
@@ -110,10 +125,10 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 		pocket_btn.text = "В КАРМАН"
 		pocket_btn.add_theme_font_size_override("font_size", 20)
 		pocket_btn.pressed.connect(func():
-			move_to_pocket(item_name, player_data, main_node)
+			move_to_pocket(item_name, current_data, main_node)
 			popup.queue_free()
 			inv_menu.queue_free()
-			show_inventory_for_member(main_node, 0, main_node.gang_members, player_data)
+			show_inventory_for_member(main_node, member_index, gang_members, player_data)
 		)
 		popup.add_child(pocket_btn)
 		btn_y += 70
@@ -126,7 +141,7 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 	close_btn.pressed.connect(func(): popup.queue_free())
 	popup.add_child(close_btn)
 
-func use_item(item_name: String, from_pocket: bool, pocket_index: int, player_data: Dictionary, main_node: Node):
+func use_item(item_name: String, from_pocket: bool, pocket_index: int, current_data: Dictionary, main_node: Node):
 	var items_db = get_node("/root/ItemsDB")
 	var item_data = items_db.get_item(item_name)
 
@@ -136,18 +151,18 @@ func use_item(item_name: String, from_pocket: bool, pocket_index: int, player_da
 	# ✅ ИСПРАВЛЕНО: Правильная структура данных из items_db
 	if item_data.get("effect", "") == "heal":
 		var heal_value = item_data.get("value", 0)
-		player_data["health"] = min(100, player_data["health"] + heal_value)
+		current_data["health"] = min(100, current_data.get("health", 100) + heal_value)
 		main_node.show_message("❤️ Восстановлено " + str(heal_value) + " HP")
 
-	# Удаляем предмет
+	# Удаляем предмет из правильного инвентаря
 	if from_pocket:
-		player_data["pockets"][pocket_index] = null
+		current_data["pockets"][pocket_index] = null
 	else:
-		player_data["inventory"].erase(item_name)
+		current_data["inventory"].erase(item_name)
 
 	main_node.update_ui()
 
-func equip_item(item_name: String, from_pocket: bool, pocket_index: int, player_data: Dictionary, main_node: Node):
+func equip_item(item_name: String, from_pocket: bool, pocket_index: int, current_data: Dictionary, main_node: Node, member_index: int, player_data: Dictionary):
 	var items_db = get_node("/root/ItemsDB")
 	var item_data = items_db.get_item(item_name)
 
@@ -171,33 +186,34 @@ func equip_item(item_name: String, from_pocket: bool, pocket_index: int, player_
 		main_node.show_message("❌ Этот предмет нельзя экипировать")
 		return
 
-	# Снимаем старый предмет если есть
-	if player_data["equipment"][slot]:
-		player_data["inventory"].append(player_data["equipment"][slot])
+	# Снимаем старый предмет если есть из ПРАВИЛЬНОГО инвентаря
+	if current_data["equipment"][slot]:
+		current_data["inventory"].append(current_data["equipment"][slot])
 
-	# Экипируем новый
-	player_data["equipment"][slot] = item_name
+	# Экипируем новый в ПРАВИЛЬНЫЙ слот
+	current_data["equipment"][slot] = item_name
 
-	# Удаляем из инвентаря/кармана
+	# Удаляем из инвентаря/кармана ПРАВИЛЬНОГО персонажа
 	if from_pocket:
-		player_data["pockets"][pocket_index] = null
+		current_data["pockets"][pocket_index] = null
 	else:
-		player_data["inventory"].erase(item_name)
+		current_data["inventory"].erase(item_name)
 
 	main_node.show_message("✅ Экипировано: " + item_name)
 
-	# ✅ ВАЖНО: Обновляем статы игрока
-	var player_stats = get_node_or_null("/root/PlayerStats")
-	if player_stats and player_stats.has_method("recalculate_equipment_bonuses"):
-		player_stats.recalculate_equipment_bonuses(player_data["equipment"], items_db)
+	# ✅ ВАЖНО: Обновляем статы ТОЛЬКО для игрока (member_index == 0)
+	if member_index == 0:
+		var player_stats = get_node_or_null("/root/PlayerStats")
+		if player_stats and player_stats.has_method("recalculate_equipment_bonuses"):
+			player_stats.recalculate_equipment_bonuses(player_data["equipment"], items_db)
 
 	main_node.update_ui()
 
-func move_to_pocket(item_name: String, player_data: Dictionary, main_node: Node):
+func move_to_pocket(item_name: String, current_data: Dictionary, main_node: Node):
 	for i in range(3):
-		if player_data["pockets"][i] == null:
-			player_data["pockets"][i] = item_name
-			player_data["inventory"].erase(item_name)
+		if current_data["pockets"][i] == null:
+			current_data["pockets"][i] = item_name
+			current_data["inventory"].erase(item_name)
 			main_node.show_message("🎒 Предмет помещён в карман " + str(i + 1))
 			return
 

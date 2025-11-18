@@ -18,11 +18,37 @@ func setup(p_data, member_index: int, p_gang_members: Array):
 	player_data = p_data
 	current_member_index = member_index
 	gang_members = p_gang_members
-	
-	if not player_data.has("pockets"):
-		player_data["pockets"] = [null, null, null]
-	
+
+	# ✅ ИСПРАВЛЕНИЕ: Инициализируем нужные поля для всех
+	if current_member_index == 0:
+		# Инвентарь игрока
+		if not player_data.has("pockets"):
+			player_data["pockets"] = [null, null, null]
+		if not player_data.has("equipment"):
+			player_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+		if not player_data.has("inventory"):
+			player_data["inventory"] = []
+	else:
+		# Инвентарь члена банды
+		if gang_members.size() > current_member_index:
+			var member = gang_members[current_member_index]
+			if not member.has("pockets"):
+				member["pockets"] = [null, null, null]
+			if not member.has("equipment"):
+				member["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+			if not member.has("inventory"):
+				member["inventory"] = []
+
 	create_ui()
+
+# ✅ НОВАЯ ФУНКЦИЯ: Получить правильный словарь данных (игрок или член банды)
+func get_current_data() -> Dictionary:
+	if current_member_index == 0:
+		return player_data
+	elif gang_members.size() > current_member_index:
+		return gang_members[current_member_index]
+	else:
+		return player_data  # Fallback
 
 func create_ui():
 	for child in get_children():
@@ -75,11 +101,14 @@ func create_ui():
 		["ranged", "🔫 Дальний бой"],
 		["gadget", "📱 Гаджет"]
 	]
-	
+
+	# ✅ ИСПРАВЛЕНИЕ: Используем правильный словарь данных
+	var current_data = get_current_data()
+
 	for slot in equipment_slots:
 		var slot_key = slot[0]
 		var slot_name = slot[1]
-		var equipped_item = player_data["equipment"][slot_key]
+		var equipped_item = current_data["equipment"][slot_key]
 		
 		var slot_bg = ColorRect.new()
 		slot_bg.size = Vector2(680, 50)
@@ -109,9 +138,9 @@ func create_ui():
 	scroll_content.add_child(pocket_title)
 	
 	equip_y += 60
-	
+
 	for i in range(3):
-		var pocket_item = player_data["pockets"][i]
+		var pocket_item = current_data["pockets"][i]
 		
 		var pocket_bg = ColorRect.new()
 		pocket_bg.size = Vector2(680, 50)
@@ -157,8 +186,8 @@ func create_ui():
 		
 		equip_y += 60
 
-	# ✅ НОВОЕ: СЕКЦИЯ МАШИНЫ
-	if player_data.get("car"):
+	# ✅ НОВОЕ: СЕКЦИЯ МАШИНЫ (только для игрока, не для членов банды)
+	if current_member_index == 0 and player_data.get("car"):
 		var car_system = get_node_or_null("/root/CarSystem")
 		var car_data = null
 		if car_system and car_system.cars_db.has(player_data["car"]):
@@ -261,8 +290,8 @@ func create_ui():
 	scroll_content.add_child(inv_title)
 
 	equip_y += 60
-	
-	if player_data["inventory"].size() == 0:
+
+	if current_data["inventory"].size() == 0:
 		var empty_label = Label.new()
 		empty_label.text = "Рюкзак пуст"
 		empty_label.position = Vector2(20, equip_y)
@@ -270,8 +299,8 @@ func create_ui():
 		empty_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1.0))
 		scroll_content.add_child(empty_label)
 	else:
-		for i in range(player_data["inventory"].size()):
-			var item = player_data["inventory"][i]
+		for i in range(current_data["inventory"].size()):
+			var item = current_data["inventory"][i]
 			
 			var item_bg = ColorRect.new()
 			item_bg.size = Vector2(680, 45)
