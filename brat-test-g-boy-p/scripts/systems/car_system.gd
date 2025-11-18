@@ -297,48 +297,61 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 	balance_label.add_theme_font_size_override("font_size", 18)
 	balance_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	selection_menu.add_child(balance_label)
-	
-	var y_pos = 220
-	
+
+	# ✅ НОВОЕ: ScrollContainer для списка машин
+	var scroll_container = ScrollContainer.new()
+	scroll_container.custom_minimum_size = Vector2(700, 870)  # Высота до кнопки закрытия
+	scroll_container.position = Vector2(10, 210)
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	selection_menu.add_child(scroll_container)
+
+	# ✅ Control для контента (чтобы позиционирование работало)
+	var scroll_content = Control.new()
+	scroll_content.custom_minimum_size = Vector2(680, 0)  # Высота будет рассчитана
+	scroll_container.add_child(scroll_content)
+
+	var y_pos = 10  # ✅ Начинаем с малого отступа внутри scroll
+
 	# Список машин
 	for car_id in cars_db:
 		var car = cars_db[car_id]
 		
 		var card_bg = ColorRect.new()
 		card_bg.size = Vector2(680, 220)
-		card_bg.position = Vector2(20, y_pos)
+		card_bg.position = Vector2(10, y_pos)
 		card_bg.color = Color(0.15, 0.15, 0.25, 1.0)
 		card_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
-		selection_menu.add_child(card_bg)
+		scroll_content.add_child(card_bg)
 
 		# Placeholder для изображения машины
 		var car_image_bg = ColorRect.new()
 		car_image_bg.size = Vector2(200, 150)
-		car_image_bg.position = Vector2(40, y_pos + 20)
+		car_image_bg.position = Vector2(30, y_pos + 20)
 		car_image_bg.color = Color(0.2, 0.2, 0.3, 1.0)
 		car_image_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
-		selection_menu.add_child(car_image_bg)
-		
+		scroll_content.add_child(car_image_bg)
+
 		var car_icon = Label.new()
 		car_icon.text = "🚗"
-		car_icon.position = Vector2(110, y_pos + 65)
+		car_icon.position = Vector2(100, y_pos + 65)
 		car_icon.add_theme_font_size_override("font_size", 64)
-		selection_menu.add_child(car_icon)
-		
+		scroll_content.add_child(car_icon)
+
 		# Информация о машине
 		var car_name = Label.new()
 		car_name.text = car["name"] + " (%d мест)" % car["seats"]  # ✅ Показываем места
-		car_name.position = Vector2(260, y_pos + 20)
+		car_name.position = Vector2(250, y_pos + 20)
 		car_name.add_theme_font_size_override("font_size", 20)
 		car_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.5, 1.0))
-		selection_menu.add_child(car_name)
+		scroll_content.add_child(car_name)
 		
 		var car_desc = Label.new()
 		car_desc.text = car["description"]
 		car_desc.position = Vector2(260, y_pos + 50)
 		car_desc.add_theme_font_size_override("font_size", 13)
 		car_desc.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
-		selection_menu.add_child(car_desc)
+		scroll_content.add_child(car_desc)
 		
 		# ✅ НОВОЕ: Первая строка статов
 		var car_stats1 = Label.new()
@@ -351,7 +364,7 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		car_stats1.position = Vector2(260, y_pos + 75)
 		car_stats1.add_theme_font_size_override("font_size", 12)
 		car_stats1.add_theme_color_override("font_color", Color(0.5, 1.0, 0.8, 1.0))
-		selection_menu.add_child(car_stats1)
+		scroll_content.add_child(car_stats1)
 
 		# ✅ НОВОЕ: Вторая строка статов
 		var car_stats2 = Label.new()
@@ -364,14 +377,14 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		car_stats2.position = Vector2(260, y_pos + 95)
 		car_stats2.add_theme_font_size_override("font_size", 12)
 		car_stats2.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0, 1.0))
-		selection_menu.add_child(car_stats2)
+		scroll_content.add_child(car_stats2)
 		
 		var car_price = Label.new()
 		car_price.text = "💰 Цена: %d руб." % car["price"]
 		car_price.position = Vector2(260, y_pos + 110)
 		car_price.add_theme_font_size_override("font_size", 18)
 		car_price.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
-		selection_menu.add_child(car_price)
+		scroll_content.add_child(car_price)
 		
 		# Кнопка выбора
 		var select_btn = Button.new()
@@ -401,9 +414,12 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 		select_btn.pressed.connect(func():
 			buy_car(main_node, player_data, c_id, c_car, selection_menu)
 		)
-		selection_menu.add_child(select_btn)
+		scroll_content.add_child(select_btn)
 		
 		y_pos += 240
+
+	# ✅ НОВОЕ: Устанавливаем высоту контента
+	scroll_content.custom_minimum_size.y = y_pos + 20
 	
 	# Кнопка закрытия
 	var close_btn = Button.new()

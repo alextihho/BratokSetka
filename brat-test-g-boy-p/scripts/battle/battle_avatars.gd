@@ -151,11 +151,21 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	defense_label.name = "DefenseLabel"
 	defense_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(defense_label)
-	
+
+	# ✅ НОВОЕ: ОРУЖИЕ
+	var weapon_label = Label.new()
+	weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
+	weapon_label.position = Vector2(5, 65)
+	weapon_label.add_theme_font_size_override("font_size", 9)
+	weapon_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+	weapon_label.name = "WeaponLabel"
+	weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	info_panel.add_child(weapon_label)
+
 	# ✅ Статусы
 	var status_label = Label.new()
 	status_label.text = battle_logic.get_status_text(fighter)
-	status_label.position = Vector2(5, 68)
+	status_label.position = Vector2(5, 80)
 	status_label.add_theme_font_size_override("font_size", 9)
 	status_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1.0))
 	status_label.name = "StatusLabel"
@@ -295,7 +305,12 @@ func update_avatar_ui(fighter: Dictionary, index: int, is_player_side: bool):
 		var defense_label = info_panel.get_node_or_null("DefenseLabel")
 		if defense_label:
 			defense_label.text = "🛡️ %d" % fighter["defense"]
-		
+
+		# ✅ НОВОЕ: Обновление оружия
+		var weapon_label = info_panel.get_node_or_null("WeaponLabel")
+		if weapon_label:
+			weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
+
 		# Обновление статусов
 		var status_label = info_panel.get_node_or_null("StatusLabel")
 		if status_label:
