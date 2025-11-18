@@ -16,6 +16,7 @@ var max_log_lines: int = 8
 var player_stats
 var player_data
 var gang_members: Array = []
+var car_data = null  # ✅ НОВОЕ: Данные машины (если бой в машине)
 
 func _ready():
 	layer = 200
@@ -40,9 +41,10 @@ func _ready():
 	battle_avatars.target_selected.connect(_on_target_selected)
 	battle_avatars.avatar_clicked.connect(_on_avatar_clicked)
 
-func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battle: bool = false, p_gang_members: Array = []):
+func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battle: bool = false, p_gang_members: Array = [], p_car_data = null):
 	player_data = p_player_data
 	gang_members = p_gang_members
+	car_data = p_car_data  # ✅ НОВОЕ: Сохраняем данные машины
 	
 	# Формируем команду игрока
 	var player_team = []
@@ -107,6 +109,36 @@ func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battl
 			add_to_log("ℹ️ Нет активных членов банды")
 	else:
 		add_to_log("ℹ️ Вы один против всех...")
+
+	# ✅ НОВОЕ: Применяем бонусы машины если бой в машине
+	if car_data:
+		var car_armor = car_data.get("armor", 0)
+		add_to_log("🚗 Бой в машине %s (Броня: +%d защиты)" % [car_data.get("name", "Машина"), car_armor])
+
+		# Даем бонус к защите всем членам команды
+		for fighter in player_team:
+			fighter["defense"] += car_armor
+			fighter["in_car"] = true
+
+		# Добавляем машину как "участника" который может быть уничтожен
+		# (не атакует, но может принять урон вместо команды)
+		var car_fighter = {
+			"name": car_data.get("name", "Машина"),
+			"hp": car_data.get("current_hp", 200),
+			"max_hp": car_data.get("max_hp", 200),
+			"damage": 0,  # Машина не атакует
+			"defense": car_data.get("stability", 50),  # Стабильность = защита машины
+			"morale": 100,
+			"accuracy": 0,
+			"is_player": true,
+			"alive": true,
+			"is_car": true,  # ✅ Флаг что это машина
+			"status_effects": {},
+			"weapon": "Машина",
+			"avatar": "res://assets/icons/car.png"
+		}
+		player_team.append(car_fighter)
+		add_to_log("🚗 Машина участвует в бою (HP: %d)" % car_fighter["hp"])
 
 	# Формируем команду врагов
 	var enemy_team = []
