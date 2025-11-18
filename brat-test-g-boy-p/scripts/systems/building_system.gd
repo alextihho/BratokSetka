@@ -72,6 +72,10 @@ func handle_kiosk_action(action_index: int, player_data: Dictionary, main_node: 
 				log_system.add_event_log(texts[randi() % texts.size()])
 			if time_system:
 				time_system.add_minutes(10)
+		3: # 🛒 Черный рынок
+			show_black_market(player_data, main_node)
+			if log_system:
+				log_system.add_event_log("Продавец кивнул в сторону подсобки. 'Там всё есть, что нужно'.")
 
 # ГАРАЖ
 func handle_garage_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
@@ -527,6 +531,186 @@ func sell_item(item_name: String, player_data: Dictionary, main_node: Node):
 	
 	player_data["inventory"].erase(item_name)
 	player_data["balance"] += sell_price
-	
+
 	main_node.show_message("💰 Продано: " + item_name + " за " + str(sell_price) + " руб.")
 	main_node.update_ui()
+
+# ✅ НОВОЕ: Черный рынок
+func show_black_market(player_data: Dictionary, main_node: Node):
+	var market_menu = CanvasLayer.new()
+	market_menu.name = "BlackMarketMenu"
+	market_menu.layer = 100
+	main_node.add_child(market_menu)
+	current_building_menu = market_menu
+
+	# Overlay
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	market_menu.add_child(overlay)
+
+	# Фон меню
+	var bg = ColorRect.new()
+	bg.size = Vector2(680, 1100)
+	bg.position = Vector2(20, 90)
+	bg.color = Color(0.08, 0.08, 0.08, 0.98)
+	market_menu.add_child(bg)
+
+	# Заголовок
+	var title = Label.new()
+	title.text = "🛒 ЧЕРНЫЙ РЫНОК"
+	title.position = Vector2(200, 110)
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	market_menu.add_child(title)
+
+	var subtitle = Label.new()
+	subtitle.text = "Оружие, броня, инструменты - всё для дела"
+	subtitle.position = Vector2(150, 150)
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
+	market_menu.add_child(subtitle)
+
+	# ScrollContainer для товаров
+	var scroll = ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(680, 930)
+	scroll.position = Vector2(20, 190)
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	market_menu.add_child(scroll)
+
+	var scroll_content = VBoxContainer.new()
+	scroll_content.custom_minimum_size = Vector2(660, 0)
+	scroll.add_child(scroll_content)
+
+	# Товары черного рынка
+	var market_items = [
+		# Оружие ближнего боя
+		{"name": "Нож", "price": 150, "category": "⚔️ ОРУЖИЕ", "desc": "Складной нож. Надежно и компактно"},
+		{"name": "Бита", "price": 100, "category": "⚔️ ОРУЖИЕ", "desc": "Алюминиевая бита. Классика районов"},
+		{"name": "Кастет", "price": 200, "category": "⚔️ ОРУЖИЕ", "desc": "Латунные кастеты. Для ближнего боя"},
+		{"name": "Монтировка", "price": 120, "category": "⚔️ ОРУЖИЕ", "desc": "Тяжелая и прочная. Универсальный инструмент"},
+
+		# Огнестрельное оружие
+		{"name": "ПМ", "price": 800, "category": "🔫 ОГНЕСТРЕЛ", "desc": "Пистолет Макарова. Легендарный стволик"},
+		{"name": "ТТ", "price": 1200, "category": "🔫 ОГНЕСТРЕЛ", "desc": "Тульский Токарев. Мощь и надежность"},
+		{"name": "Обрез", "price": 1500, "category": "🔫 ОГНЕСТРЕЛ", "desc": "Обрезанная двустволка. Страшная штука"},
+
+		# Броня
+		{"name": "Легкий бронежилет", "price": 600, "category": "🦺 БРОНЯ", "desc": "1 класс защиты. Легкий и незаметный"},
+		{"name": "Бронежилет", "price": 1200, "category": "🦺 БРОНЯ", "desc": "2 класс. Надежная защита корпуса"},
+		{"name": "Тяжелый бронежилет", "price": 2500, "category": "🦺 БРОНЯ", "desc": "3 класс. Армейский уровень"},
+
+		# Инструменты
+		{"name": "Отмычка", "price": 250, "category": "🔧 ИНСТРУМЕНТЫ", "desc": "Набор отмычек. Открывает многое"},
+		{"name": "Болторез", "price": 400, "category": "🔧 ИНСТРУМЕНТЫ", "desc": "Режет замки и цепи как масло"},
+		{"name": "Набор для угона", "price": 800, "category": "🔧 ИНСТРУМЕНТЫ", "desc": "Всё для угона авто. Риск оправдан"},
+		{"name": "Дубликатор ключей", "price": 500, "category": "🔧 ИНСТРУМЕНТЫ", "desc": "Копирует ключи за минуту"}
+	]
+
+	var current_category = ""
+	for item in market_items:
+		# Заголовок категории
+		if item["category"] != current_category:
+			current_category = item["category"]
+			var cat_label = Label.new()
+			cat_label.text = current_category
+			cat_label.add_theme_font_size_override("font_size", 20)
+			cat_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+			scroll_content.add_child(cat_label)
+
+			var spacer = Control.new()
+			spacer.custom_minimum_size = Vector2(0, 10)
+			scroll_content.add_child(spacer)
+
+		# Карточка товара
+		var item_panel = ColorRect.new()
+		item_panel.custom_minimum_size = Vector2(660, 100)
+		item_panel.color = Color(0.15, 0.15, 0.18, 1.0)
+		scroll_content.add_child(item_panel)
+
+		var item_name_label = Label.new()
+		item_name_label.text = item["name"]
+		item_name_label.position = Vector2(15, 15)
+		item_name_label.add_theme_font_size_override("font_size", 20)
+		item_name_label.add_theme_color_override("font_color", Color.WHITE)
+		item_panel.add_child(item_name_label)
+
+		var item_desc = Label.new()
+		item_desc.text = item["desc"]
+		item_desc.position = Vector2(15, 45)
+		item_desc.add_theme_font_size_override("font_size", 14)
+		item_desc.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
+		item_panel.add_child(item_desc)
+
+		var price_label = Label.new()
+		price_label.text = str(item["price"]) + " ₽"
+		price_label.position = Vector2(15, 70)
+		price_label.add_theme_font_size_override("font_size", 18)
+		price_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
+		item_panel.add_child(price_label)
+
+		# Кнопка покупки
+		var buy_btn = Button.new()
+		buy_btn.custom_minimum_size = Vector2(180, 45)
+		buy_btn.position = Vector2(460, 28)
+		buy_btn.text = "КУПИТЬ"
+		buy_btn.add_theme_font_size_override("font_size", 18)
+
+		var style_buy = StyleBoxFlat.new()
+		style_buy.bg_color = Color(0.2, 0.5, 0.2, 1.0)
+		buy_btn.add_theme_stylebox_override("normal", style_buy)
+
+		var style_buy_hover = StyleBoxFlat.new()
+		style_buy_hover.bg_color = Color(0.3, 0.6, 0.3, 1.0)
+		buy_btn.add_theme_stylebox_override("hover", style_buy_hover)
+
+		var item_name_copy = item["name"]
+		var item_price_copy = item["price"]
+		buy_btn.pressed.connect(func():
+			buy_black_market_item(item_name_copy, item_price_copy, player_data, main_node)
+		)
+		item_panel.add_child(buy_btn)
+
+		var spacer2 = Control.new()
+		spacer2.custom_minimum_size = Vector2(0, 10)
+		scroll_content.add_child(spacer2)
+
+	# Кнопка закрытия
+	var close_btn = Button.new()
+	close_btn.custom_minimum_size = Vector2(680, 60)
+	close_btn.position = Vector2(20, 1140)
+	close_btn.text = "ЗАКРЫТЬ"
+	close_btn.add_theme_font_size_override("font_size", 22)
+
+	var style_close = StyleBoxFlat.new()
+	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	close_btn.add_theme_stylebox_override("normal", style_close)
+
+	var style_close_hover = StyleBoxFlat.new()
+	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
+	close_btn.add_theme_stylebox_override("hover", style_close_hover)
+
+	close_btn.pressed.connect(func(): market_menu.queue_free())
+	market_menu.add_child(close_btn)
+
+# Покупка на черном рынке
+func buy_black_market_item(item_name: String, price: int, player_data: Dictionary, main_node: Node):
+	if player_data["balance"] < price:
+		main_node.show_message("❌ Недостаточно денег! Нужно: " + str(price) + " руб.")
+		return
+
+	player_data["balance"] -= price
+	player_data["inventory"].append(item_name)
+
+	main_node.show_message("✅ Куплено: " + item_name + " за " + str(price) + " руб.")
+	main_node.update_ui()
+
+	if log_system:
+		var texts = [
+			"Сделка прошла быстро. Товар в кармане, деньги у продавца.",
+			"'Не светись с этим', - бросил торговец, передавая товар.",
+			"Покупка на черном рынке - дело обычное. Главное не попасться ментам."
+		]
+		log_system.add_event_log(texts[randi() % texts.size()])

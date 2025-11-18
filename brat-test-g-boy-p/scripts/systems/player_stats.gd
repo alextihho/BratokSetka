@@ -134,9 +134,25 @@ func get_stat(stat_name: String) -> int:
 
 func increase_stat(stat_name: String, amount: int = 1):
 	if stat_name in base_stats:
-		base_stats[stat_name] += amount
-		stats_changed.emit()
-		print("📈 %s → %d" % [stat_name, base_stats[stat_name]])
+		# ✅ ПРОВЕРКА: Навыки до 100, авторитет бесконечно
+		if stat_name == "reputation":
+			# Авторитет растет бесконечно
+			base_stats[stat_name] += amount
+			stats_changed.emit()
+			print("📈 %s → %d (бесконечный рост)" % [stat_name, base_stats[stat_name]])
+		else:
+			# Остальные навыки до 100
+			var old_value = base_stats[stat_name]
+			base_stats[stat_name] = min(100, base_stats[stat_name] + amount)
+
+			if base_stats[stat_name] != old_value:
+				stats_changed.emit()
+				if base_stats[stat_name] >= 100:
+					print("⭐ %s → 100 (МАКСИМУМ ДОСТИГНУТ)" % stat_name)
+				else:
+					print("📈 %s → %d" % [stat_name, base_stats[stat_name]])
+			else:
+				print("⚠️ %s уже на максимуме (100)" % stat_name)
 
 # === БОНУСЫ ОТ ЭКИПИРОВКИ ===
 func recalculate_equipment_bonuses(equipment: Dictionary, items_db):

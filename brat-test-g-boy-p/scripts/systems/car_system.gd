@@ -835,8 +835,7 @@ func select_driver(main_node: Node, player_data: Dictionary, driver_index: int, 
 		log_system.add_event_log("Машина готова! Теперь за рулём: %s." % driver_name)
 
 	driver_menu.queue_free()
-	await main_node.get_tree().create_timer(0.5).timeout
-	show_car_dealership_menu(main_node, player_data)
+	# ✅ ИСПРАВЛЕНО: НЕ открываем автосалон после выбора водителя
 
 # ✅ НОВОЕ: Получить количество мест в машине
 func get_car_seats(car_id: String) -> int:
