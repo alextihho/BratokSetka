@@ -485,11 +485,11 @@ func cheat_add_skill(main_node: Node, skill: String, levels: int):
 
 	# Добавляем уровни
 	for i in range(levels):
-		player_stats.level_up_stat(skill)
+		player_stats.increase_stat(skill, 1)  # ✅ ИСПРАВЛЕНО: используем increase_stat вместо level_up_stat
 
 	var current_level = player_stats.get_stat(skill)
 	main_node.show_message("📊 %s +%d (текущий: %d) (ЧИТ)" % [skill, levels, current_level])
-	print("📊 ЧИТ: %s +%d уровней" % [skill, levels])
+	print("📊 ЧИТ: %s +%d уровней (теперь: %d)" % [skill, levels, current_level])
 
 func _ready():
 	gang_manager = get_node("/root/GangManager")
