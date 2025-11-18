@@ -92,13 +92,16 @@ func handle_grid_click(click_pos: Vector2):
 
 func show_movement_menu(target_square: String, click_pos: Vector2, building_name: String = ""):
 	close_movement_menu()
-	
+
 	pending_target_square = target_square
 	is_menu_open = true
-	
+
 	var current_square = grid_system.get_player_square()
 	var distance = grid_system.get_distance(current_square, target_square)
-	var time_walk = distance * 30
+
+	# ✅ Проверка: в машине или пешком?
+	var in_car = main_node.player_data.get("in_car", false)
+	var time_walk = distance * 30 if not in_car else distance * 10  # В машине быстрее!
 	
 	movement_menu = CanvasLayer.new()
 	movement_menu.name = "MovementMenu"
@@ -142,7 +145,11 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	var walk_btn = Button.new()
 	walk_btn.custom_minimum_size = Vector2(360, 60)
 	walk_btn.position = Vector2(180, 610)
-	walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
+	# ✅ Разный текст в зависимости от способа передвижения
+	if in_car:
+		walk_btn.text = "🚗 ЕХАТЬ (~%d мин)" % time_walk
+	else:
+		walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
 	walk_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	var style_walk = StyleBoxFlat.new()
@@ -156,7 +163,7 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	walk_btn.add_theme_font_size_override("font_size", 20)
 	walk_btn.pressed.connect(func():
 		print("✅ Начало перехода к: " + pending_target_square)
-		start_movement(pending_target_square, time_walk, building_name)
+		start_movement(pending_target_square, time_walk, building_name, in_car)
 		close_movement_menu()
 	)
 	movement_menu.add_child(walk_btn)
@@ -189,22 +196,25 @@ func close_movement_menu():
 		is_menu_open = false
 		pending_target_square = ""
 
-func start_movement(target_square: String, time_minutes: int, building_name: String = ""):
+func start_movement(target_square: String, time_minutes: int, building_name: String = "", in_car: bool = false):
 	var current_square = grid_system.get_player_square()
-	
+
 	is_moving = true
-	
-	print("🚶 Начало движения: %s → %s" % [current_square, target_square])
-	
+
+	var move_icon = "🚗" if in_car else "🚶"
+	var move_verb = "Едем" if in_car else "Идём"
+
+	print("%s Начало движения: %s → %s" % [move_icon, current_square, target_square])
+
 	# ✅ ЛОГ: Начало движения
 	var log_system = get_node_or_null("/root/LogSystem")
 	if log_system:
 		if building_name != "":
-			log_system.add_movement_log("🚶 Идём к: %s (~%d мин)" % [building_name, time_minutes])
+			log_system.add_movement_log("%s %s к: %s (~%d мин)" % [move_icon, move_verb, building_name, time_minutes])
 		else:
-			log_system.add_movement_log("🚶 Перемещение (~%d мин)" % time_minutes)
-	
-	show_movement_animation(time_minutes, building_name)
+			log_system.add_movement_log("%s Перемещение (~%d мин)" % [move_icon, time_minutes])
+
+	show_movement_animation(time_minutes, building_name, in_car)
 	
 	if time_system:
 		time_system.add_minutes(time_minutes)
@@ -228,26 +238,28 @@ func start_movement(target_square: String, time_minutes: int, building_name: Str
 		print("🏢 Прибыли к зданию: " + building_name)
 		main_node.show_location_menu(building_name)
 
-func show_movement_animation(time_minutes: int, building_name: String):
+func show_movement_animation(time_minutes: int, building_name: String, in_car: bool = false):
 	var anim_layer = CanvasLayer.new()
 	anim_layer.name = "MovementAnimation"
 	anim_layer.layer = 200
 	main_node.add_child(anim_layer)
-	
+
 	var bg = ColorRect.new()
 	bg.size = Vector2(720, 1280)
 	bg.color = Color(0, 0, 0, 0.7)
 	anim_layer.add_child(bg)
-	
+
 	var icon = Label.new()
-	icon.text = "🚶"
+	# ✅ Разная иконка в зависимости от способа передвижения
+	icon.text = "🚗" if in_car else "🚶"
 	icon.position = Vector2(320, 540)
 	icon.add_theme_font_size_override("font_size", 64)
 	anim_layer.add_child(icon)
-	
+
 	var text = Label.new()
+	var move_verb = "Едем" if in_car else "Идём"
 	if building_name != "":
-		text.text = "Идём к зданию:\n" + building_name
+		text.text = "%s к зданию:\n%s" % [move_verb, building_name]
 	else:
 		text.text = "Перемещение..."
 	text.position = Vector2(240, 640)

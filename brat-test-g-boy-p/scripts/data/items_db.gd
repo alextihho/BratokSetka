@@ -21,7 +21,7 @@ var items = {
 	"Камуфляж": {"type": "armor", "defense": 8, "price": 400, "level": 4, "description": "Камуфляжная форма. Защита +8"},
 	"Легкий бронежилет": {"type": "armor", "defense": 10, "price": 600, "level": 5, "description": "Легкий бронежилет 1 класса. Защита +10"},
 	"Бронежилет": {"type": "armor", "defense": 15, "price": 1200, "level": 6, "description": "Военный бронежилет 2 класса. Защита +15"},
-	"Тяжёлый бронежилет": {"type": "armor", "defense": 20, "price": 2500, "level": 8, "description": "Усиленный бронежилет 3 класса. Защита +20"},
+	"Тяжелый бронежилет": {"type": "armor", "defense": 20, "price": 2500, "level": 8, "description": "Усиленный бронежилет 3 класса. Защита +20"},
 
 	# === БЛИЖНИЙ БОЙ ===
 	"Кулаки": {"type": "melee", "damage": 2, "strength_req": 0, "price": 0, "level": 1, "description": "Голыми руками. Урон +2"},

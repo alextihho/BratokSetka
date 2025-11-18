@@ -195,7 +195,7 @@ func get_equipment_for_faction(faction: String, level: int) -> Dictionary:
 			if level >= 5:
 				police_armor.append("Бронежилет")
 			if level >= 7:
-				police_armor.append("Тяжёлый бронежилет")
+				police_armor.append("Тяжелый бронежилет")
 
 			equipment["armor"] = police_armor[randi() % police_armor.size()]
 

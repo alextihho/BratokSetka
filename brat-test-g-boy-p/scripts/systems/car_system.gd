@@ -477,12 +477,11 @@ func buy_car(main_node: Node, player_data: Dictionary, car_id: String, car: Dict
 		log_system.add_event_log(event_text)
 
 	main_node.update_ui()
-	
+
 	car_purchased.emit(car["name"])
-	
+
 	selection_menu.queue_free()
-	await main_node.get_tree().create_timer(1.0).timeout
-	show_car_dealership_menu(main_node, player_data)
+	# ✅ ИСПРАВЛЕНО: НЕ открываем автосалон после покупки - пользователь должен назначить водителя через инвентарь
 
 # Меню ремонта (без изменений)
 func show_repair_menu(main_node: Node, player_data: Dictionary, dealership_menu: CanvasLayer):
