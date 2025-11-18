@@ -21,26 +21,48 @@ func initialize(p_battle_logic, parent: CanvasLayer):
 
 # ========== СОЗДАНИЕ АВАТАРОК ==========
 func create_team_avatars(parent: CanvasLayer):
-	# ✅ ИСПРАВЛЕНО: Команда игрока (слева, НИЖЕ верхней панели)
-	var player_x = 30
-	var player_y = 250  # ✅ Было 170 → Теперь 250 (ниже UI на y=140)
-	
-	for i in range(battle_logic.player_team.size()):
-		create_avatar(battle_logic.player_team[i], Vector2(player_x, player_y), i, true, parent)
-		player_y += 130
-	
-	# ✅ ИСПРАВЛЕНО: Команда врагов (справа, тоже ниже UI)
-	var enemy_x = 470  # ✅ Было 500 → сдвинуто левее для места под HP-панель
-	var enemy_y = 250
-	
-	for i in range(battle_logic.enemy_team.size()):
-		create_avatar(battle_logic.enemy_team[i], Vector2(enemy_x, enemy_y), i, false, parent)
-		enemy_y += 130
+	# ✅ НОВОЕ: ScrollContainer для команды игрока (макс 4 видимых)
+	var player_scroll = ScrollContainer.new()
+	player_scroll.custom_minimum_size = Vector2(440, 520)  # 4 аватара * 130px = 520px
+	player_scroll.position = Vector2(10, 250)
+	player_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	player_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	player_scroll.name = "PlayerTeamScroll"
+	parent.add_child(player_scroll)
 
-func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side: bool, parent: CanvasLayer):
+	# ✅ VBoxContainer для автоматической расстановки
+	var player_vbox = VBoxContainer.new()
+	player_vbox.name = "PlayerTeamVBox"
+	player_scroll.add_child(player_vbox)
+
+	# ✅ Команда игрока (в ScrollContainer)
+	for i in range(battle_logic.player_team.size()):
+		create_avatar(battle_logic.player_team[i], Vector2(0, 0), i, true, player_vbox)
+
+	# ✅ ScrollContainer для команды врагов (тоже делаем прокручиваемым)
+	var enemy_scroll = ScrollContainer.new()
+	enemy_scroll.custom_minimum_size = Vector2(240, 520)  # Тоже 4 врага
+	enemy_scroll.position = Vector2(460, 250)
+	enemy_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	enemy_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	enemy_scroll.name = "EnemyTeamScroll"
+	parent.add_child(enemy_scroll)
+
+	# ✅ VBoxContainer для врагов
+	var enemy_vbox = VBoxContainer.new()
+	enemy_vbox.name = "EnemyTeamVBox"
+	enemy_scroll.add_child(enemy_vbox)
+
+	# ✅ Команда врагов (в ScrollContainer)
+	for i in range(battle_logic.enemy_team.size()):
+		create_avatar(battle_logic.enemy_team[i], Vector2(0, 0), i, false, enemy_vbox)
+
+func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side: bool, parent: Node):
 	var avatar_container = Control.new()
 	avatar_container.custom_minimum_size = Vector2(220, 120)  # ✅ Увеличена ширина для HP-панели
-	avatar_container.position = pos
+	# ✅ Position используется только если НЕ в VBoxContainer
+	if pos != Vector2(0, 0):
+		avatar_container.position = pos
 	avatar_container.name = ("Player" if is_player_side else "Enemy") + "Avatar_" + str(index)
 	avatar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(avatar_container)

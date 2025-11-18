@@ -229,11 +229,13 @@ func apply_equipment(enemy: Dictionary) -> void:
 
 	# Применяем оружие
 	if equipment["weapon"]:
-		var weapon_data = items_db.get_item(equipment["weapon"])
-		print("🔍 Ищем '%s' в ItemsDB: %s" % [equipment["weapon"], "найдено" if weapon_data else "НЕ НАЙДЕНО"])
-		if weapon_data:
-			enemy["equipped_weapon"] = equipment["weapon"]
+		# ✅ ВСЕГДА устанавливаем equipped_weapon, даже если ItemsDB не найден!
+		enemy["equipped_weapon"] = equipment["weapon"]
 
+		var weapon_data = items_db.get_item(equipment["weapon"]) if items_db else null
+		print("🔍 Ищем '%s' в ItemsDB: %s" % [equipment["weapon"], "найдено" if weapon_data else "НЕ НАЙДЕНО"])
+
+		if weapon_data:
 			# ✅ Увеличиваем урон от оружия
 			if weapon_data.has("damage"):
 				enemy["damage_min"] += weapon_data["damage"]
@@ -245,13 +247,17 @@ func apply_equipment(enemy: Dictionary) -> void:
 				enemy["damage_min"],
 				enemy["damage_max"]
 			])
+		else:
+			# ✅ FALLBACK: если ItemsDB не нашел оружие, ставим базовый урон
+			print("   ⚠️ %s экипирован: %s (БЕЗ ItemsDB, базовый урон)" % [enemy["name"], equipment["weapon"]])
 
 	# Применяем броню
 	if equipment["armor"]:
-		var armor_data = items_db.get_item(equipment["armor"])
-		if armor_data:
-			enemy["equipped_armor"] = equipment["armor"]
+		# ✅ ВСЕГДА устанавливаем equipped_armor
+		enemy["equipped_armor"] = equipment["armor"]
 
+		var armor_data = items_db.get_item(equipment["armor"]) if items_db else null
+		if armor_data:
 			# ✅ Добавляем защиту
 			if armor_data.has("defense"):
 				if not enemy.has("defense"):
@@ -266,9 +272,11 @@ func apply_equipment(enemy: Dictionary) -> void:
 
 	# Применяем шлем
 	if equipment["helmet"]:
-		var helmet_data = items_db.get_item(equipment["helmet"])
+		# ✅ ВСЕГДА устанавливаем equipped_helmet
+		enemy["equipped_helmet"] = equipment["helmet"]
+
+		var helmet_data = items_db.get_item(equipment["helmet"]) if items_db else null
 		if helmet_data:
-			enemy["equipped_helmet"] = equipment["helmet"]
 
 			# ✅ Добавляем защиту от шлема
 			if helmet_data.has("defense"):
