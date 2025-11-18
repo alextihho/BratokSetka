@@ -279,6 +279,10 @@ func start_movement(target_square: String, time_minutes: int, building_name: Str
 
 	movement_completed.emit(target_square)
 
+	# ✅ НОВОЕ: Проверяем случайные события
+	if randf() < 0.35:  # 35% шанс события
+		check_arrival_events(target_square)
+
 	if building_name != "":
 		await main_node.get_tree().create_timer(0.3).timeout
 		print("🏢 Прибыли к зданию: " + building_name)

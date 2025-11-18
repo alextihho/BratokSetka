@@ -34,7 +34,10 @@ func trigger_random_event(location: String, player_data: Dictionary, main_node: 
 		"meet_npc":
 			meet_npc_event(location, player_data, main_node)
 			return true
-	
+		"choice_event":  # ✅ НОВОЕ: События с выбором
+			show_choice_event(player_data, main_node)
+			return true
+
 	return false
 
 func get_location_danger(location: String) -> float:
@@ -58,38 +61,46 @@ func get_location_danger(location: String) -> float:
 
 func choose_event_type(location: String) -> String:
 	var roll = randf()
-	
+
 	match location:
 		"УЛИЦА":
-			if roll < 0.4:
+			if roll < 0.25:
 				return "combat"
-			elif roll < 0.6:
+			elif roll < 0.45:
+				return "choice_event"  # ✅ НОВОЕ
+			elif roll < 0.65:
 				return "meet_npc"
-			elif roll < 0.8:
+			elif roll < 0.85:
 				return "find_money"
 			else:
 				return "find_item"
-		
+
 		"ПОРТ":
-			if roll < 0.5:
-				return "combat"
-			elif roll < 0.7:
-				return "find_item"
-			else:
-				return "meet_npc"
-		
-		"ВОКЗАЛ":
-			if roll < 0.3:
+			if roll < 0.4:
 				return "combat"
 			elif roll < 0.6:
+				return "find_item"
+			elif roll < 0.8:
+				return "choice_event"  # ✅ НОВОЕ
+			else:
+				return "meet_npc"
+
+		"ВОКЗАЛ":
+			if roll < 0.2:
+				return "combat"
+			elif roll < 0.45:
+				return "choice_event"  # ✅ НОВОЕ
+			elif roll < 0.7:
 				return "meet_npc"
 			else:
 				return "find_money"
-		
+
 		_:
-			if roll < 0.4:
+			if roll < 0.3:
 				return "find_money"
-			elif roll < 0.7:
+			elif roll < 0.55:
+				return "choice_event"  # ✅ НОВОЕ
+			elif roll < 0.8:
 				return "meet_npc"
 			else:
 				return "find_item"
@@ -298,3 +309,181 @@ func get_location_dialogues(location: String) -> Array:
 				"Незнакомец кивает",
 				"Кто-то проходит мимо"
 			]
+
+# ✅ НОВОЕ: События с выбором решения
+func show_choice_event(player_data: Dictionary, main_node: Node):
+	var events = [
+		{
+			"text": "🙏 Бедный человек просит денег на еду. Дать ему 50 рублей?",
+			"choices": [
+				{"text": "Дать 50₽", "money": -50, "reputation": 5, "item": null},
+				{"text": "Пройти мимо", "money": 0, "reputation": 0, "item": null}
+			],
+			"artistic_log": {
+				"give": "Помогли бедняку. Может быть добро вернётся?",
+				"refuse": "Прошли мимо просящего. Своя рубаха ближе к телу"
+			}
+		},
+		{
+			"text": "👴 Старик предлагает купить старинный нож за 100₽. Купить?",
+			"choices": [
+				{"text": "Купить", "money": -100, "reputation": 0, "item": "Старинный нож"},
+				{"text": "Отказаться", "money": 0, "reputation": 0, "item": null}
+			],
+			"artistic_log": {
+				"give": "Купили старинный нож. Выглядит интересно, может пригодится",
+				"refuse": "Не стали покупать нож у старика. Зачем нам старьё?"
+			}
+		},
+		{
+			"text": "💼 На земле лежит портфель. Открыть или оставить?",
+			"choices": [
+				{"text": "Открыть", "money": 0, "reputation": -5, "item": "random"},
+				{"text": "Оставить", "money": 0, "reputation": 5, "item": null}
+			],
+			"artistic_log": {
+				"give": "Открыли чужой портфель. Внутри что-то лежало...",
+				"refuse": "Не тронули чужой портфель. Не наше - не трогаем"
+			}
+		},
+		{
+			"text": "🚬 Парни предлагают покурить за компанию. Присоединиться?",
+			"choices": [
+				{"text": "Да", "money": 0, "reputation": 10, "item": null},
+				{"text": "Нет", "money": 0, "reputation": 0, "item": null}
+			],
+			"artistic_log": {
+				"give": "Покурили с местными. Познакомились, обсудили дела района",
+				"refuse": "Отказались от предложения. Не курим, спасибо"
+			}
+		},
+		{
+			"text": "🎰 Уличный наперстки. Поставить 100₽ на удачу?",
+			"choices": [
+				{"text": "Играть", "money": 0, "reputation": 0, "item": "gamble"},
+				{"text": "Не играть", "money": 0, "reputation": 0, "item": null}
+			],
+			"artistic_log": {
+				"give": "Попробовали удачу в наперстки...",
+				"refuse": "Не стали играть в наперстки. Не лохи"
+			}
+		}
+	]
+
+	var event = events[randi() % events.size()]
+
+	# Создаём меню выбора
+	var choice_layer = CanvasLayer.new()
+	choice_layer.name = "ChoiceEventLayer"
+	choice_layer.layer = 250
+	main_node.add_child(choice_layer)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	choice_layer.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(680, 400)
+	bg.position = Vector2(20, 440)
+	bg.color = Color(0.1, 0.1, 0.15, 0.98)
+	choice_layer.add_child(bg)
+
+	var title = Label.new()
+	title.text = "🎯 СОБЫТИЕ"
+	title.position = Vector2(280, 460)
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+	choice_layer.add_child(title)
+
+	var event_text = Label.new()
+	event_text.text = event["text"]
+	event_text.position = Vector2(60, 520)
+	event_text.add_theme_font_size_override("font_size", 18)
+	event_text.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
+	event_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	event_text.custom_minimum_size = Vector2(600, 100)
+	choice_layer.add_child(event_text)
+
+	var y_pos = 640
+	for i in range(event["choices"].size()):
+		var choice = event["choices"][i]
+		var choice_btn = Button.new()
+		choice_btn.custom_minimum_size = Vector2(640, 60)
+		choice_btn.position = Vector2(40, y_pos)
+		choice_btn.text = choice["text"]
+		choice_btn.z_index = 10
+
+		var style = StyleBoxFlat.new()
+		style.bg_color = Color(0.3, 0.5, 0.3, 1.0) if i == 0 else Color(0.5, 0.3, 0.3, 1.0)
+		choice_btn.add_theme_stylebox_override("normal", style)
+
+		choice_btn.add_theme_font_size_override("font_size", 20)
+
+		var ch = choice.duplicate()
+		var art_log_key = "give" if i == 0 else "refuse"
+		choice_btn.pressed.connect(func():
+			handle_choice(player_data, main_node, ch, event["artistic_log"][art_log_key], choice_layer)
+		)
+		choice_layer.add_child(choice_btn)
+
+		y_pos += 80
+
+func handle_choice(player_data: Dictionary, main_node: Node, choice: Dictionary, artistic_log: String, choice_layer: CanvasLayer):
+	# Применяем последствия
+	if choice["money"] != 0:
+		if player_data["balance"] + choice["money"] < 0:
+			main_node.show_message("❌ Недостаточно денег!")
+			choice_layer.queue_free()
+			return
+		player_data["balance"] += choice["money"]
+
+	if choice["reputation"] != 0:
+		player_data["reputation"] = player_data.get("reputation", 0) + choice["reputation"]
+
+	# Особые случаи
+	if choice["item"] == "random":
+		# Случайный предмет из портфеля
+		var items = ["Аптечка", "Документы", "Деньги", "Пустой портфель"]
+		var item = items[randi() % items.size()]
+		if item == "Деньги":
+			var amount = randi_range(50, 200)
+			player_data["balance"] += amount
+			main_node.show_message("💰 В портфеле было %d₽!" % amount)
+		elif item != "Пустой портфель":
+			player_data["inventory"].append(item)
+			main_node.show_message("📦 В портфеле: " + item)
+		else:
+			main_node.show_message("❌ Портфель пустой")
+
+	elif choice["item"] == "gamble":
+		# Азартная игра
+		if player_data["balance"] < 100:
+			main_node.show_message("❌ Недостаточно денег!")
+			choice_layer.queue_free()
+			return
+
+		player_data["balance"] -= 100
+		if randf() < 0.4:  # 40% шанс выиграть
+			var winnings = randi_range(150, 300)
+			player_data["balance"] += winnings
+			main_node.show_message("🎰 ВЫИГРЫШ! +%d₽" % winnings)
+			if log_system:
+				log_system.add_event_log("Сыграли в наперстки и ВЫИГРАЛИ %d рублей! Удача!" % winnings)
+		else:
+			main_node.show_message("💸 Проиграли 100₽")
+			if log_system:
+				log_system.add_event_log("Сыграли в наперстки и проиграли. Лохотрон...")
+
+	elif choice["item"]:
+		# Обычный предмет
+		player_data["inventory"].append(choice["item"])
+		main_node.show_message("📦 Получено: " + choice["item"])
+
+	# Художественный лог
+	if log_system and artistic_log:
+		log_system.add_event_log(artistic_log)
+
+	main_node.update_ui()
+	choice_layer.queue_free()
