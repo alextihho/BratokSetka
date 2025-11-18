@@ -524,6 +524,18 @@ func show_stats_window(member_index: int):
 	# ✅ Для главного игрока (индекс 0) - показываем характеристики
 	if member_index == 0 and player_stats:
 		stats_text += player_stats.get_stats_text() + "\n\n"
+	else:
+		# ✅ НОВОЕ: Для НПС показываем их боевые характеристики
+		stats_text += "═══════════════════════\n"
+		stats_text += "⚔️ ХАРАКТЕРИСТИКИ\n"
+		stats_text += "═══════════════════════\n\n"
+
+		stats_text += "❤️ HP: %d / %d\n" % [member.get("hp", 100), member.get("max_hp", 100)]
+		stats_text += "⚔️ Урон: %d\n" % member.get("damage", 10)
+		stats_text += "🛡️ Защита: %d\n" % member.get("defense", 0)
+		stats_text += "🎯 Точность: %d%%\n" % int(member.get("accuracy", 0.65) * 100)
+		stats_text += "💪 Мораль: %d\n" % member.get("morale", 80)
+		stats_text += "🔫 Оружие: %s\n\n" % member.get("weapon", "Кулаки")
 
 	# ✅ Индивидуальная статистика для всех
 	stats_text += "═══════════════════════\n"

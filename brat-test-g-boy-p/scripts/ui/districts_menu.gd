@@ -54,7 +54,7 @@ func create_ui():
 	# ScrollContainer для районов
 	var scroll = ScrollContainer.new()
 	scroll.position = Vector2(20, 270)
-	scroll.size = Vector2(680, 790)  # ✅ Увеличено до 790 (было 780)
+	scroll.size = Vector2(680, 800)  # ✅ МАКСИМАЛЬНАЯ высота до кнопки (1070-270=800)
 	scroll.name = "DistrictsScroll"
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO  # ✅ Автоскролл
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # ✅ Отключен горизонтальный
