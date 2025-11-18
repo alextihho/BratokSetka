@@ -53,8 +53,21 @@ func create_ui():
 	title.add_theme_font_size_override("font_size", 26)
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	add_child(title)
-	
-	var equip_y = 220
+
+	# ✅ НОВОЕ: ScrollContainer для контента инвентаря
+	var scroll_container = ScrollContainer.new()
+	scroll_container.custom_minimum_size = Vector2(700, 940)  # Высота до кнопки закрытия
+	scroll_container.position = Vector2(10, 200)
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll_container)
+
+	# ✅ Control для контента
+	var scroll_content = Control.new()
+	scroll_content.custom_minimum_size = Vector2(680, 0)  # Высота рассчитается автоматически
+	scroll_container.add_child(scroll_content)
+
+	var equip_y = 20  # ✅ Начинаем с малого отступа внутри scroll
 	var equipment_slots = [
 		["helmet", "🧢 Головной убор"],
 		["armor", "🦺 Броня"],
@@ -70,9 +83,9 @@ func create_ui():
 		
 		var slot_bg = ColorRect.new()
 		slot_bg.size = Vector2(680, 50)
-		slot_bg.position = Vector2(20, equip_y)
+		slot_bg.position = Vector2(10, equip_y)  # ✅ Относительно scroll_content
 		slot_bg.color = Color(0.2, 0.2, 0.25, 1.0)
-		add_child(slot_bg)
+		scroll_content.add_child(slot_bg)
 		
 		var slot_label = Label.new()
 		var display_text = slot_name + ": "
@@ -84,7 +97,7 @@ func create_ui():
 		slot_label.position = Vector2(30, equip_y + 15)
 		slot_label.add_theme_font_size_override("font_size", 18)
 		slot_label.add_theme_color_override("font_color", Color.WHITE)
-		add_child(slot_label)
+		scroll_content.add_child(slot_label)
 		
 		equip_y += 60
 	
@@ -93,7 +106,7 @@ func create_ui():
 	pocket_title.position = Vector2(30, equip_y + 20)
 	pocket_title.add_theme_font_size_override("font_size", 22)
 	pocket_title.add_theme_color_override("font_color", Color(0.8, 1.0, 0.8, 1.0))
-	add_child(pocket_title)
+	scroll_content.add_child(pocket_title)
 	
 	equip_y += 60
 	
@@ -102,10 +115,10 @@ func create_ui():
 		
 		var pocket_bg = ColorRect.new()
 		pocket_bg.size = Vector2(680, 50)
-		pocket_bg.position = Vector2(20, equip_y)
+		pocket_bg.position = Vector2(10, equip_y)
 		pocket_bg.color = Color(0.15, 0.25, 0.15, 1.0)
 		pocket_bg.name = "Pocket_" + str(i)
-		add_child(pocket_bg)
+		scroll_content.add_child(pocket_bg)
 		
 		var pocket_label = Label.new()
 		var pocket_text = "Карман " + str(i + 1) + ": "
@@ -117,7 +130,7 @@ func create_ui():
 		pocket_label.position = Vector2(30, equip_y + 15)
 		pocket_label.add_theme_font_size_override("font_size", 18)
 		pocket_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-		add_child(pocket_label)
+		scroll_content.add_child(pocket_label)
 		
 		if pocket_item:
 			var pocket_btn = Button.new()
@@ -140,7 +153,7 @@ func create_ui():
 			pocket_btn.pressed.connect(func():
 				item_clicked.emit(pocket_item, true, pocket_idx)
 			)
-			add_child(pocket_btn)
+			scroll_content.add_child(pocket_btn)
 		
 		equip_y += 60
 
@@ -156,7 +169,7 @@ func create_ui():
 		car_title.position = Vector2(30, equip_y + 20)
 		car_title.add_theme_font_size_override("font_size", 22)
 		car_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
-		add_child(car_title)
+		scroll_content.add_child(car_title)
 
 		equip_y += 60
 
@@ -179,17 +192,17 @@ func create_ui():
 		else:
 			car_info.text = player_data.get("car", "Неизвестная машина")
 
-		car_info.position = Vector2(30, equip_y)
+		car_info.position = Vector2(20, equip_y)
 		car_info.add_theme_font_size_override("font_size", 18)
 		car_info.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-		add_child(car_info)
+		scroll_content.add_child(car_info)
 
 		equip_y += 60
 
 		# Кнопка "ВЫБРАТЬ ВОДИТЕЛЯ"
 		var driver_btn = Button.new()
 		driver_btn.custom_minimum_size = Vector2(330, 50)
-		driver_btn.position = Vector2(20, equip_y)
+		driver_btn.position = Vector2(10, equip_y)
 		driver_btn.text = "👤 ВЫБРАТЬ ВОДИТЕЛЯ"
 
 		var style_driver = StyleBoxFlat.new()
@@ -206,7 +219,7 @@ func create_ui():
 				queue_free()
 				car_system.show_driver_selection_menu(get_parent(), player_data)
 		)
-		add_child(driver_btn)
+		scroll_content.add_child(driver_btn)
 
 		# Кнопка "СЕСТЬ/ВЫЙТИ"
 		var toggle_car_btn = Button.new()
@@ -234,7 +247,7 @@ func create_ui():
 				get_parent().show_message("🚶 Вы вышли из машины")
 			queue_free()
 		)
-		add_child(toggle_car_btn)
+		scroll_content.add_child(toggle_car_btn)
 
 		equip_y += 70
 
@@ -243,34 +256,34 @@ func create_ui():
 	inv_title.position = Vector2(30, equip_y + 20)
 	inv_title.add_theme_font_size_override("font_size", 22)
 	inv_title.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
-	add_child(inv_title)
+	scroll_content.add_child(inv_title)
 
 	equip_y += 60
 	
 	if player_data["inventory"].size() == 0:
 		var empty_label = Label.new()
 		empty_label.text = "Рюкзак пуст"
-		empty_label.position = Vector2(30, equip_y)
+		empty_label.position = Vector2(20, equip_y)
 		empty_label.add_theme_font_size_override("font_size", 16)
 		empty_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5, 1.0))
-		add_child(empty_label)
+		scroll_content.add_child(empty_label)
 	else:
 		for i in range(player_data["inventory"].size()):
 			var item = player_data["inventory"][i]
 			
 			var item_bg = ColorRect.new()
 			item_bg.size = Vector2(680, 45)
-			item_bg.position = Vector2(20, equip_y)
+			item_bg.position = Vector2(10, equip_y)
 			item_bg.color = Color(0.15, 0.15, 0.2, 1.0)
 			item_bg.name = "InvItem_" + str(i)
-			add_child(item_bg)
+			scroll_content.add_child(item_bg)
 			
 			var item_label = Label.new()
 			item_label.text = "• " + item
 			item_label.position = Vector2(30, equip_y + 12)
 			item_label.add_theme_font_size_override("font_size", 18)
 			item_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-			add_child(item_label)
+			scroll_content.add_child(item_label)
 			
 			var action_btn = Button.new()
 			action_btn.custom_minimum_size = Vector2(120, 35)
@@ -292,10 +305,13 @@ func create_ui():
 			action_btn.pressed.connect(func():
 				item_clicked.emit(item_name, false, -1)
 			)
-			add_child(action_btn)
+			scroll_content.add_child(action_btn)
 			
 			equip_y += 50
-	
+
+	# ✅ НОВОЕ: Устанавливаем высоту контента
+	scroll_content.custom_minimum_size.y = equip_y + 20
+
 	var stats_btn = Button.new()
 	stats_btn.custom_minimum_size = Vector2(210, 50)
 	stats_btn.position = Vector2(20, 1110)
