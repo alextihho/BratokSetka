@@ -696,16 +696,135 @@ func show_black_market(player_data: Dictionary, main_node: Node):
 	close_btn.pressed.connect(func(): market_menu.queue_free())
 	market_menu.add_child(close_btn)
 
-# Покупка на черном рынке
+# Покупка на черном рынке - показ меню выбора получателя
 func buy_black_market_item(item_name: String, price: int, player_data: Dictionary, main_node: Node):
 	if player_data["balance"] < price:
 		main_node.show_message("❌ Недостаточно денег! Нужно: " + str(price) + " руб.")
 		return
 
-	player_data["balance"] -= price
-	player_data["inventory"].append(item_name)
+	# Показываем меню выбора получателя
+	show_recipient_selection_menu(item_name, price, player_data, main_node)
 
-	main_node.show_message("✅ Куплено: " + item_name + " за " + str(price) + " руб.")
+# Меню выбора получателя при покупке
+func show_recipient_selection_menu(item_name: String, price: int, player_data: Dictionary, main_node: Node):
+	var select_menu = CanvasLayer.new()
+	select_menu.name = "RecipientSelectMenu"
+	select_menu.layer = 220  # Поверх черного рынка
+	main_node.add_child(select_menu)
+
+	# Overlay
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	select_menu.add_child(overlay)
+
+	# Фон
+	var bg = ColorRect.new()
+	bg.size = Vector2(600, 800)
+	bg.position = Vector2(60, 240)
+	bg.color = Color(0.05, 0.05, 0.05, 0.98)
+	select_menu.add_child(bg)
+
+	# Заголовок
+	var title = Label.new()
+	title.text = "👤 КОМУ КУПИТЬ?"
+	title.position = Vector2(200, 260)
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+	select_menu.add_child(title)
+
+	var subtitle = Label.new()
+	subtitle.text = item_name + " (" + str(price) + "₽)"
+	subtitle.position = Vector2(200, 300)
+	subtitle.add_theme_font_size_override("font_size", 18)
+	subtitle.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
+	select_menu.add_child(subtitle)
+
+	var btn_y = 360
+
+	# Кнопка "Себе"
+	var self_btn = Button.new()
+	self_btn.custom_minimum_size = Vector2(540, 70)
+	self_btn.position = Vector2(90, btn_y)
+	self_btn.text = "🎯 СЕБЕ (ГГ)"
+	self_btn.add_theme_font_size_override("font_size", 22)
+
+	var style_self = StyleBoxFlat.new()
+	style_self.bg_color = Color(0.3, 0.6, 0.3, 1.0)
+	self_btn.add_theme_stylebox_override("normal", style_self)
+
+	var style_self_hover = StyleBoxFlat.new()
+	style_self_hover.bg_color = Color(0.4, 0.7, 0.4, 1.0)
+	self_btn.add_theme_stylebox_override("hover", style_self_hover)
+
+	self_btn.pressed.connect(func():
+		complete_purchase(item_name, price, player_data, player_data, main_node)
+		select_menu.queue_free()
+	)
+	select_menu.add_child(self_btn)
+	btn_y += 80
+
+	# Кнопки для членов банды
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+	for i in range(gang_members.size()):
+		if i == 0:
+			continue  # Пропускаем ГГ (индекс 0)
+
+		var member = gang_members[i]
+		var member_btn = Button.new()
+		member_btn.custom_minimum_size = Vector2(540, 60)
+		member_btn.position = Vector2(90, btn_y)
+
+		var member_name = member.get("name", "Боец " + str(i))
+		member_btn.text = "👤 " + member_name
+		member_btn.add_theme_font_size_override("font_size", 20)
+
+		var style_member = StyleBoxFlat.new()
+		style_member.bg_color = Color(0.2, 0.3, 0.5, 1.0)
+		member_btn.add_theme_stylebox_override("normal", style_member)
+
+		var style_member_hover = StyleBoxFlat.new()
+		style_member_hover.bg_color = Color(0.3, 0.4, 0.6, 1.0)
+		member_btn.add_theme_stylebox_override("hover", style_member_hover)
+
+		var member_index = i
+		member_btn.pressed.connect(func():
+			complete_purchase(item_name, price, player_data, gang_members[member_index], main_node)
+			select_menu.queue_free()
+		)
+		select_menu.add_child(member_btn)
+		btn_y += 70
+
+	# Кнопка отмены
+	var cancel_btn = Button.new()
+	cancel_btn.custom_minimum_size = Vector2(540, 60)
+	cancel_btn.position = Vector2(90, 950)
+	cancel_btn.text = "ОТМЕНА"
+	cancel_btn.add_theme_font_size_override("font_size", 20)
+
+	var style_cancel = StyleBoxFlat.new()
+	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
+
+	var style_cancel_hover = StyleBoxFlat.new()
+	style_cancel_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
+	cancel_btn.add_theme_stylebox_override("hover", style_cancel_hover)
+
+	cancel_btn.pressed.connect(func(): select_menu.queue_free())
+	select_menu.add_child(cancel_btn)
+
+# Завершение покупки для выбранного получателя
+func complete_purchase(item_name: String, price: int, player_data: Dictionary, recipient_data: Dictionary, main_node: Node):
+	player_data["balance"] -= price
+
+	# Добавляем в инвентарь получателя
+	if not recipient_data.has("inventory"):
+		recipient_data["inventory"] = []
+	recipient_data["inventory"].append(item_name)
+
+	var recipient_name = recipient_data.get("name", "Вы")
+	main_node.show_message("✅ Куплено: " + item_name + " → " + recipient_name + " (" + str(price) + "₽)")
 	main_node.update_ui()
 
 	if log_system:
