@@ -95,11 +95,16 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	hp_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_container.add_child(hp_indicator)
 	
-	# ✅ Иконка персонажа (эмодзи)
+	# ✅ Иконка персонажа (эмодзи) - МАШИНА vs ЧЕЛОВЕК
 	var icon = Label.new()
-	icon.text = "🤵" if is_player_side else "💀"
-	icon.position = Vector2(20, 15)
-	icon.add_theme_font_size_override("font_size", 40)
+	if fighter.get("is_car", false):
+		icon.text = "🚗"  # ✅ Иконка машины
+		icon.add_theme_font_size_override("font_size", 50)  # Больше размер
+		icon.position = Vector2(15, 10)
+	else:
+		icon.text = "🤵" if is_player_side else "💀"
+		icon.position = Vector2(20, 15)
+		icon.add_theme_font_size_override("font_size", 40)
 	icon.name = "Icon"
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_container.add_child(icon)
@@ -122,19 +127,23 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(hp_label)
 	
-	# ✅ Мораль
-	var morale_label = Label.new()
-	morale_label.text = "💪 %d" % fighter["morale"]
-	morale_label.position = Vector2(5, 22)
-	morale_label.add_theme_font_size_override("font_size", 11)
-	morale_label.add_theme_color_override("font_color", get_morale_color(fighter["morale"]))
-	morale_label.name = "MoraleLabel"
-	morale_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	info_panel.add_child(morale_label)
+	# ✅ Мораль (НЕ для машины)
+	if not fighter.get("is_car", false):
+		var morale_label = Label.new()
+		morale_label.text = "💪 %d" % fighter["morale"]
+		morale_label.position = Vector2(5, 22)
+		morale_label.add_theme_font_size_override("font_size", 11)
+		morale_label.add_theme_color_override("font_color", get_morale_color(fighter["morale"]))
+		morale_label.name = "MoraleLabel"
+		morale_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		info_panel.add_child(morale_label)
 	
-	# ✅ Урон
+	# ✅ Урон / Стабильность (для машины)
 	var damage_label = Label.new()
-	damage_label.text = "⚔️ %d" % fighter["damage"]
+	if fighter.get("is_car", false):
+		damage_label.text = "⚙️ Стаб: %d" % fighter.get("stability", 0)
+	else:
+		damage_label.text = "⚔️ %d" % fighter["damage"]
 	damage_label.position = Vector2(5, 39)
 	damage_label.add_theme_font_size_override("font_size", 10)
 	damage_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
@@ -142,9 +151,12 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	damage_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(damage_label)
 	
-	# ✅ Защита
+	# ✅ Защита / Прочность (для машины)
 	var defense_label = Label.new()
-	defense_label.text = "🛡️ %d" % fighter["defense"]
+	if fighter.get("is_car", false):
+		defense_label.text = "🔩 Прочн: %d" % fighter.get("max_hp", 0)
+	else:
+		defense_label.text = "🛡️ %d" % fighter["defense"]
 	defense_label.position = Vector2(5, 52)
 	defense_label.add_theme_font_size_override("font_size", 10)
 	defense_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.9, 1.0))
@@ -152,15 +164,16 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	defense_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(defense_label)
 
-	# ✅ НОВОЕ: ОРУЖИЕ
-	var weapon_label = Label.new()
-	weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
-	weapon_label.position = Vector2(5, 65)
-	weapon_label.add_theme_font_size_override("font_size", 9)
-	weapon_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
-	weapon_label.name = "WeaponLabel"
-	weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	info_panel.add_child(weapon_label)
+	# ✅ НОВОЕ: ОРУЖИЕ (НЕ для машины)
+	if not fighter.get("is_car", false):
+		var weapon_label = Label.new()
+		weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
+		weapon_label.position = Vector2(5, 65)
+		weapon_label.add_theme_font_size_override("font_size", 9)
+		weapon_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+		weapon_label.name = "WeaponLabel"
+		weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		info_panel.add_child(weapon_label)
 
 	# ✅ Статусы
 	var status_label = Label.new()
