@@ -218,3 +218,21 @@ func move_to_pocket(item_name: String, current_data: Dictionary, main_node: Node
 			return
 
 	main_node.show_message("❌ Карманы заполнены!")
+
+# ✅ НОВАЯ ФУНКЦИЯ: Снять экипировку
+func unequip_item(slot_key: String, current_data: Dictionary, main_node: Node):
+	if not current_data.has("equipment"):
+		main_node.show_message("❌ Ошибка: нет данных экипировки")
+		return
+
+	var equipped_item = current_data["equipment"].get(slot_key, null)
+	if not equipped_item:
+		main_node.show_message("❌ В этом слоте ничего не экипировано")
+		return
+
+	# Снимаем предмет и добавляем в инвентарь
+	current_data["equipment"][slot_key] = null
+	current_data["inventory"].append(equipped_item)
+
+	main_node.show_message("✅ Снято: " + equipped_item)
+	main_node.update_ui()

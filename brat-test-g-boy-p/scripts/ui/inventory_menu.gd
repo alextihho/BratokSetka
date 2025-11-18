@@ -127,7 +127,36 @@ func create_ui():
 		slot_label.add_theme_font_size_override("font_size", 18)
 		slot_label.add_theme_color_override("font_color", Color.WHITE)
 		scroll_content.add_child(slot_label)
-		
+
+		# ✅ НОВОЕ: Кнопка "СНЯТЬ" для экипированных предметов
+		if equipped_item:
+			var unequip_btn = Button.new()
+			unequip_btn.custom_minimum_size = Vector2(120, 40)
+			unequip_btn.position = Vector2(560, equip_y + 5)
+			unequip_btn.text = "СНЯТЬ"
+			unequip_btn.name = "UnequipBtn_" + slot_key
+
+			var style_unequip = StyleBoxFlat.new()
+			style_unequip.bg_color = Color(0.6, 0.3, 0.3, 1.0)
+			unequip_btn.add_theme_stylebox_override("normal", style_unequip)
+
+			var style_unequip_hover = StyleBoxFlat.new()
+			style_unequip_hover.bg_color = Color(0.7, 0.4, 0.4, 1.0)
+			unequip_btn.add_theme_stylebox_override("hover", style_unequip_hover)
+
+			unequip_btn.add_theme_font_size_override("font_size", 16)
+
+			var eq_slot_key = slot_key  # Capture для callback
+			unequip_btn.pressed.connect(func():
+				# Вызываем сигнал для снятия экипировки
+				var inv_manager = get_node("/root/InventoryManager")
+				if inv_manager:
+					inv_manager.unequip_item(eq_slot_key, current_data, get_parent())
+					queue_free()
+					inv_manager.show_inventory_for_member(get_parent(), current_member_index, gang_members, player_data)
+			)
+			scroll_content.add_child(unequip_btn)
+
 		equip_y += 60
 	
 	var pocket_title = Label.new()
