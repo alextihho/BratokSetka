@@ -114,7 +114,9 @@ func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battl
 
 	# ✅ НОВОЕ: Используем BattleEnemy для генерации врагов с экипировкой!
 	if battle_enemy:
+		print("🔍 BattleEnemy найден! Генерируем %d врагов типа '%s'" % [enemy_count, enemy_type])
 		var generated_enemies = battle_enemy.generate_enemies(enemy_type, enemy_count)
+		print("🔍 Сгенерировано врагов: %d" % generated_enemies.size())
 		for enemy_data in generated_enemies:
 			# Конвертируем данные из BattleEnemy в формат для боя
 			var enemy = {
