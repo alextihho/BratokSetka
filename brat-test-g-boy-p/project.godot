@@ -35,6 +35,7 @@ PoliceSystem="*res://scripts/systems/police_system.gd"
 LogSystem="*res://scripts/systems/log_system.gd"
 BarSystem="*res://scripts/systems/bar_system.gd"
 CarSystem="*res://scripts/systems/car_system.gd"
+BattleEnemy="*res://scripts/battle/battle_enemy.gd"
 
 [display]
 

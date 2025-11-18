@@ -6,6 +6,7 @@ signal battle_ended(victory: bool)
 # Модули
 var battle_logic
 var battle_avatars
+var battle_enemy  # ✅ НОВОЕ: Модуль генерации врагов
 
 # UI элементы
 var battle_log_lines: Array = []
@@ -16,19 +17,10 @@ var player_stats
 var player_data
 var gang_members: Array = []
 
-# Шаблоны врагов
-var enemy_templates = {
-	"drunkard": {"name": "Пьяный", "hp": 40, "damage": 5, "defense": 0, "morale": 30, "accuracy": 0.5, "reward": 20},
-	"gopnik": {"name": "Гопник", "hp": 60, "damage": 10, "defense": 2, "morale": 50, "accuracy": 0.65, "reward": 50},
-	"thug": {"name": "Хулиган", "hp": 80, "damage": 15, "defense": 5, "morale": 60, "accuracy": 0.70, "reward": 80},
-	"bandit": {"name": "Бандит", "hp": 100, "damage": 20, "defense": 8, "morale": 70, "accuracy": 0.75, "reward": 120},
-	"guard": {"name": "Охранник", "hp": 120, "damage": 25, "defense": 15, "morale": 80, "accuracy": 0.80, "reward": 150},
-	"boss": {"name": "Главарь", "hp": 200, "damage": 35, "defense": 20, "morale": 100, "accuracy": 0.85, "reward": 300}
-}
-
 func _ready():
 	layer = 200
 	player_stats = get_node("/root/PlayerStats")
+	battle_enemy = get_node_or_null("/root/BattleEnemy")  # ✅ НОВОЕ: Получаем систему врагов
 	
 	# Создаём модули
 	battle_logic = Node.new()
@@ -119,27 +111,60 @@ func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battl
 	# Формируем команду врагов
 	var enemy_team = []
 	var enemy_count = get_enemy_count(enemy_type, player_team.size())
-	
-	for i in range(enemy_count):
-		var template = enemy_templates[enemy_type]
-		var enemy = {
-			"name": template["name"] + " " + str(i + 1),
-			"hp": template["hp"],
-			"max_hp": template["hp"],
-			"damage": template["damage"],
-			"defense": template["defense"],
-			"morale": template["morale"],
-			"accuracy": template["accuracy"],
-			"reward": template["reward"],
-			"alive": true,
-			"status_effects": {},
-			"weapon": "Кулаки",
-			"avatar": "res://assets/avatars/enemy_" + enemy_type + ".png",
-			"is_enemy": true,
-			"inventory": [],
-			"equipment": {}
-		}
-		enemy_team.append(enemy)
+
+	# ✅ НОВОЕ: Используем BattleEnemy для генерации врагов с экипировкой!
+	if battle_enemy:
+		var generated_enemies = battle_enemy.generate_enemies(enemy_type, enemy_count)
+		for enemy_data in generated_enemies:
+			# Конвертируем данные из BattleEnemy в формат для боя
+			var enemy = {
+				"name": enemy_data.get("name", "Враг"),
+				"hp": enemy_data.get("hp", 60),
+				"max_hp": enemy_data.get("max_hp", 60),
+				"damage": (enemy_data.get("damage_min", 5) + enemy_data.get("damage_max", 10)) / 2,  # ✅ Средний урон
+				"damage_min": enemy_data.get("damage_min", 5),  # ✅ Сохраняем min
+				"damage_max": enemy_data.get("damage_max", 10),  # ✅ Сохраняем max
+				"defense": enemy_data.get("defense", 0),
+				"morale": 60,
+				"accuracy": 0.65,
+				"alive": true,
+				"status_effects": {},
+				"weapon": enemy_data.get("equipped_weapon", "Кулаки"),  # ✅ Экипировка!
+				"armor": enemy_data.get("equipped_armor", null),
+				"helmet": enemy_data.get("equipped_helmet", null),
+				"avatar": "res://assets/avatars/enemy_" + enemy_type + ".png",
+				"is_enemy": true,
+				"inventory": [],
+				"equipment": {},
+				"faction": enemy_data.get("faction", "street"),  # ✅ Фракция
+				"level": enemy_data.get("level", 1)  # ✅ Уровень
+			}
+			enemy_team.append(enemy)
+
+			# ✅ Лог экипировки
+			if enemy_data.has("equipped_weapon"):
+				add_to_log("   🗡️ %s: %s" % [enemy["name"], enemy_data["equipped_weapon"]])
+	else:
+		# ✅ FALLBACK: старый метод если BattleEnemy не найден
+		print("⚠️ BattleEnemy не найден! Используется старая генерация врагов")
+		for i in range(enemy_count):
+			var enemy = {
+				"name": "Враг #" + str(i + 1),
+				"hp": 60,
+				"max_hp": 60,
+				"damage": 10,
+				"defense": 0,
+				"morale": 50,
+				"accuracy": 0.65,
+				"alive": true,
+				"status_effects": {},
+				"weapon": "Кулаки",
+				"avatar": "res://assets/avatars/enemy_gopnik.png",
+				"is_enemy": true,
+				"inventory": [],
+				"equipment": {}
+			}
+			enemy_team.append(enemy)
 	
 	# Инициализируем боевую логику
 	battle_logic.initialize(player_team, enemy_team)
@@ -160,8 +185,10 @@ func get_enemy_count(enemy_type: String, player_count: int) -> int:
 		"thug": base_count = clamp(player_count + randi_range(1, 2), 2, 6)
 		"bandit": base_count = clamp(player_count + randi_range(1, 3), 2, 8)
 		"guard": base_count = clamp(player_count + randi_range(2, 4), 3, 10)
+		"cop": base_count = clamp(player_count + randi_range(1, 2), 3, 7)  # ✅ НОВОЕ: Менты
+		"swat": base_count = clamp(player_count + randi_range(2, 4), 5, 10)  # ✅ НОВОЕ: ОМОН
 		"boss": base_count = clamp(player_count + randi_range(3, 5), 4, 12)
-	
+
 	add_to_log("👹 Врагов: %d (тип: %s)" % [base_count, enemy_type])
 	return base_count
 

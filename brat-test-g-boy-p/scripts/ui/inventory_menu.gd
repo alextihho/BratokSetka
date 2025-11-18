@@ -143,14 +143,108 @@ func create_ui():
 			add_child(pocket_btn)
 		
 		equip_y += 60
-	
+
+	# ✅ НОВОЕ: СЕКЦИЯ МАШИНЫ
+	if player_data.get("car"):
+		var car_system = get_node_or_null("/root/CarSystem")
+		var car_data = null
+		if car_system and car_system.cars_db.has(player_data["car"]):
+			car_data = car_system.cars_db[player_data["car"]]
+
+		var car_title = Label.new()
+		car_title.text = "🚗 МАШИНА:"
+		car_title.position = Vector2(30, equip_y + 20)
+		car_title.add_theme_font_size_override("font_size", 22)
+		car_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+		add_child(car_title)
+
+		equip_y += 60
+
+		# Информация о машине
+		var car_info = Label.new()
+		if car_data:
+			var driver_text = "Водитель: "
+			var current_driver = player_data.get("current_driver", -1)
+			if current_driver == -1:
+				driver_text += "Вы"
+			elif current_driver >= 0 and gang_members.size() > current_driver:
+				driver_text += gang_members[current_driver].get("name", "Боец")
+			else:
+				driver_text += "не выбран"
+
+			var in_car = player_data.get("in_car", false)
+			var car_status = "🟢 В машине" if in_car else "🔴 Пешком"
+
+			car_info.text = "%s\n%s | %s" % [car_data["name"], driver_text, car_status]
+		else:
+			car_info.text = player_data.get("car", "Неизвестная машина")
+
+		car_info.position = Vector2(30, equip_y)
+		car_info.add_theme_font_size_override("font_size", 18)
+		car_info.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
+		add_child(car_info)
+
+		equip_y += 60
+
+		# Кнопка "ВЫБРАТЬ ВОДИТЕЛЯ"
+		var driver_btn = Button.new()
+		driver_btn.custom_minimum_size = Vector2(330, 50)
+		driver_btn.position = Vector2(20, equip_y)
+		driver_btn.text = "👤 ВЫБРАТЬ ВОДИТЕЛЯ"
+
+		var style_driver = StyleBoxFlat.new()
+		style_driver.bg_color = Color(0.4, 0.6, 0.4, 1.0)
+		driver_btn.add_theme_stylebox_override("normal", style_driver)
+
+		var style_driver_hover = StyleBoxFlat.new()
+		style_driver_hover.bg_color = Color(0.5, 0.7, 0.5, 1.0)
+		driver_btn.add_theme_stylebox_override("hover", style_driver_hover)
+
+		driver_btn.add_theme_font_size_override("font_size", 18)
+		driver_btn.pressed.connect(func():
+			if car_system:
+				queue_free()
+				car_system.show_driver_selection_menu(get_parent(), player_data)
+		)
+		add_child(driver_btn)
+
+		# Кнопка "СЕСТЬ/ВЫЙТИ"
+		var toggle_car_btn = Button.new()
+		toggle_car_btn.custom_minimum_size = Vector2(330, 50)
+		toggle_car_btn.position = Vector2(370, equip_y)
+
+		var in_car = player_data.get("in_car", false)
+		if in_car:
+			toggle_car_btn.text = "🚶 ВЫЙТИ ИЗ МАШИНЫ"
+			var style_exit = StyleBoxFlat.new()
+			style_exit.bg_color = Color(0.6, 0.4, 0.2, 1.0)
+			toggle_car_btn.add_theme_stylebox_override("normal", style_exit)
+		else:
+			toggle_car_btn.text = "🚗 СЕСТЬ В МАШИНУ"
+			var style_enter = StyleBoxFlat.new()
+			style_enter.bg_color = Color(0.3, 0.5, 0.7, 1.0)
+			toggle_car_btn.add_theme_stylebox_override("normal", style_enter)
+
+		toggle_car_btn.add_theme_font_size_override("font_size", 18)
+		toggle_car_btn.pressed.connect(func():
+			player_data["in_car"] = not player_data.get("in_car", false)
+			if player_data["in_car"]:
+				get_parent().show_message("🚗 Вы сели в машину")
+			else:
+				get_parent().show_message("🚶 Вы вышли из машины")
+			queue_free()
+		)
+		add_child(toggle_car_btn)
+
+		equip_y += 70
+
 	var inv_title = Label.new()
 	inv_title.text = "🎒 РЮКЗАК:"
 	inv_title.position = Vector2(30, equip_y + 20)
 	inv_title.add_theme_font_size_override("font_size", 22)
 	inv_title.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
 	add_child(inv_title)
-	
+
 	equip_y += 60
 	
 	if player_data["inventory"].size() == 0:

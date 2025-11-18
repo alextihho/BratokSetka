@@ -222,30 +222,6 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 
 	y_pos += 100
 
-	# ✅ НОВОЕ: Кнопка "ВЫБРАТЬ ВОДИТЕЛЯ"
-	var driver_btn = Button.new()
-	driver_btn.custom_minimum_size = Vector2(660, 80)
-	driver_btn.position = Vector2(30, y_pos)
-	driver_btn.text = "👤 ВЫБРАТЬ ВОДИТЕЛЯ"
-	driver_btn.disabled = not player_data.get("car")
-	driver_btn.z_index = 10
-
-	var style_driver = StyleBoxFlat.new()
-	if driver_btn.disabled:
-		style_driver.bg_color = Color(0.3, 0.3, 0.3, 1.0)
-	else:
-		style_driver.bg_color = Color(0.4, 0.6, 0.4, 1.0)
-	driver_btn.add_theme_stylebox_override("normal", style_driver)
-
-	driver_btn.add_theme_font_size_override("font_size", 24)
-	driver_btn.pressed.connect(func():
-		dealership_menu.queue_free()
-		show_driver_selection_menu(main_node, player_data)
-	)
-	dealership_menu.add_child(driver_btn)
-
-	y_pos += 100
-
 	# Информационный блок
 	var info_bg = ColorRect.new()
 	info_bg.size = Vector2(660, 500)  # ✅ Немного уменьшили
