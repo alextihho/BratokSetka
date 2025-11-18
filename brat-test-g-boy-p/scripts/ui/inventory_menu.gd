@@ -177,8 +177,10 @@ func create_ui():
 		var car_info = Label.new()
 		if car_data:
 			var driver_text = "Водитель: "
-			var current_driver = player_data.get("current_driver", -1)
-			if current_driver == -1:
+			var current_driver = player_data.get("current_driver", null)
+			if current_driver == null:
+				driver_text += "не выбран"
+			elif current_driver == -1:
 				driver_text += "Вы"
 			elif current_driver >= 0 and gang_members.size() > current_driver:
 				driver_text += gang_members[current_driver].get("name", "Боец")
