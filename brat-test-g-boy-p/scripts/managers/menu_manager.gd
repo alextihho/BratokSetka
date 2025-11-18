@@ -321,12 +321,23 @@ func show_cheats_menu(main_node: Node):
 	money_title.add_theme_font_size_override("font_size", 24)
 	money_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	cheats_popup.add_child(money_title)
+
+	# ✅ НОВОЕ: Текущий баланс
+	var money_current = Label.new()
+	money_current.text = "Текущий: %d руб." % main_node.player_data.get("balance", 0)
+	money_current.position = Vector2(400, y_pos)
+	money_current.add_theme_font_size_override("font_size", 18)
+	money_current.add_theme_color_override("font_color", Color(0.8, 0.8, 0.3, 1.0))
+	cheats_popup.add_child(money_current)
 	y_pos += 40
 
 	var money_amounts = [1000, 5000, 10000]
 	for amount in money_amounts:
 		var btn = create_cheat_button("+%d руб." % amount, Vector2(40, y_pos), Vector2(200, 50))
-		btn.pressed.connect(func(): cheat_add_money(main_node, amount))
+		btn.pressed.connect(func():
+			cheat_add_money(main_node, amount)
+			money_current.text = "Текущий: %d руб." % main_node.player_data.get("balance", 0)
+		)
 		cheats_popup.add_child(btn)
 		y_pos += 60
 
@@ -339,10 +350,21 @@ func show_cheats_menu(main_node: Node):
 	health_title.add_theme_font_size_override("font_size", 24)
 	health_title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
 	cheats_popup.add_child(health_title)
+
+	# ✅ НОВОЕ: Текущее HP
+	var health_current = Label.new()
+	health_current.text = "Текущее: %d HP" % main_node.player_data.get("health", 100)
+	health_current.position = Vector2(400, y_pos)
+	health_current.add_theme_font_size_override("font_size", 18)
+	health_current.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1.0))
+	cheats_popup.add_child(health_current)
 	y_pos += 40
 
 	var heal_btn = create_cheat_button("Полное исцеление", Vector2(40, y_pos), Vector2(200, 50))
-	heal_btn.pressed.connect(func(): cheat_heal(main_node))
+	heal_btn.pressed.connect(func():
+		cheat_heal(main_node)
+		health_current.text = "Текущее: %d HP" % main_node.player_data.get("health", 100)
+	)
 	cheats_popup.add_child(heal_btn)
 	y_pos += 80
 
@@ -366,6 +388,9 @@ func show_cheats_menu(main_node: Node):
 		"DRV": "Вождение"
 	}
 
+	# ✅ НОВОЕ: Массив лейблов для обновления
+	var skill_current_labels = {}
+
 	for skill in skills:
 		var skill_label = Label.new()
 		skill_label.text = skill_names[skill] + " (%s)" % skill
@@ -374,13 +399,28 @@ func show_cheats_menu(main_node: Node):
 		skill_label.add_theme_color_override("font_color", Color.WHITE)
 		cheats_popup.add_child(skill_label)
 
+		# ✅ НОВОЕ: Текущий уровень навыка
+		var skill_current = Label.new()
+		var current_level = player_stats.get_stat(skill) if player_stats else 0
+		skill_current.text = "Ур. %d" % current_level
+		skill_current.position = Vector2(480, y_pos)
+		skill_current.add_theme_font_size_override("font_size", 16)
+		skill_current.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5, 1.0))
+		cheats_popup.add_child(skill_current)
+		skill_current_labels[skill] = skill_current
+
 		var levels = [1, 5, 10]
 		var x_offset = 250
 		for level in levels:
 			var skill_btn = create_cheat_button("+%d" % level, Vector2(x_offset, y_pos - 5), Vector2(60, 40))
 			var s = skill
 			var l = level
-			skill_btn.pressed.connect(func(): cheat_add_skill(main_node, s, l))
+			skill_btn.pressed.connect(func():
+				cheat_add_skill(main_node, s, l)
+				# ✅ ОБНОВЛЯЕМ лейбл после изменения
+				var new_level = player_stats.get_stat(s) if player_stats else 0
+				skill_current_labels[s].text = "Ур. %d" % new_level
+			)
 			cheats_popup.add_child(skill_btn)
 			x_offset += 70
 
