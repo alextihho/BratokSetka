@@ -51,26 +51,24 @@ func create_ui():
 	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
 	add_child(hint)
 
-	# ✅ ScrollContainer для районов
-	var scroll_container = ScrollContainer.new()
-	scroll_container.custom_minimum_size = Vector2(680, 780)
-	scroll_container.position = Vector2(20, 270)
-	scroll_container.size = Vector2(680, 780)
-	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll_container.follow_focus = true
-	add_child(scroll_container)
+	# ScrollContainer для районов
+	var scroll = ScrollContainer.new()
+	scroll.position = Vector2(20, 270)
+	scroll.size = Vector2(680, 780)
+	scroll.name = "DistrictsScroll"
+	add_child(scroll)
 
-	# VBoxContainer для карточек районов
-	var districts_container = VBoxContainer.new()
-	districts_container.name = "DistrictsContainer"
-	scroll_container.add_child(districts_container)
+	# VBoxContainer для автоматического размещения
+	var vbox = VBoxContainer.new()
+	vbox.name = "DistrictsVBox"
+	vbox.add_theme_constant_override("separation", 10)
+	scroll.add_child(vbox)
 
 	# Список районов
 	var districts = districts_system.get_all_districts()
 
 	for district in districts:
-		create_district_card_in_container(district, districts_container)
+		create_district_card_scrollable(district, vbox)
 	
 	# Кнопка закрытия
 	var close_btn = Button.new()
@@ -199,20 +197,19 @@ func create_progress_bar(value: int, pos: Vector2):
 	percent_label.add_theme_color_override("font_color", Color.BLACK)
 	add_child(percent_label)
 
-# ✅ НОВАЯ ФУНКЦИЯ: Карточка района в контейнере
-func create_district_card_in_container(district: Dictionary, container: VBoxContainer):
-	# Контейнер карточки
-	var card_control = Control.new()
-	card_control.custom_minimum_size = Vector2(660, 170)
-	card_control.name = "DistrictCard_" + district["name"]
-	container.add_child(card_control)
+# Новая функция для создания карточки внутри ScrollContainer
+func create_district_card_scrollable(district: Dictionary, container: VBoxContainer):
+	var card = Control.new()
+	card.custom_minimum_size = Vector2(660, 160)
+	card.name = "DistrictCard_" + district["name"]
+	container.add_child(card)
 
-	# Фон
+	# Фон карточки
 	var district_bg = ColorRect.new()
 	district_bg.size = Vector2(660, 160)
 	district_bg.position = Vector2(0, 0)
 	district_bg.color = district["color"] * 0.3
-	card_control.add_child(district_bg)
+	card.add_child(district_bg)
 
 	# Название района
 	var district_name = Label.new()
@@ -220,7 +217,7 @@ func create_district_card_in_container(district: Dictionary, container: VBoxCont
 	district_name.position = Vector2(10, 10)
 	district_name.add_theme_font_size_override("font_size", 22)
 	district_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
-	card_control.add_child(district_name)
+	card.add_child(district_name)
 
 	# Владелец
 	var owner_label = Label.new()
@@ -234,7 +231,7 @@ func create_district_card_in_container(district: Dictionary, container: VBoxCont
 	owner_label.position = Vector2(10, 40)
 	owner_label.add_theme_font_size_override("font_size", 16)
 	owner_label.add_theme_color_override("font_color", owner_color)
-	card_control.add_child(owner_label)
+	card.add_child(owner_label)
 
 	# Влияние игрока
 	var player_influence = district["influence"].get("Игрок", 0)
@@ -243,33 +240,10 @@ func create_district_card_in_container(district: Dictionary, container: VBoxCont
 	influence_label.position = Vector2(10, 65)
 	influence_label.add_theme_font_size_override("font_size", 16)
 	influence_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
-	card_control.add_child(influence_label)
+	card.add_child(influence_label)
 
 	# Прогресс-бар влияния
-	var progress_bg = ColorRect.new()
-	progress_bg.size = Vector2(300, 20)
-	progress_bg.position = Vector2(10, 90)
-	progress_bg.color = Color(0.2, 0.2, 0.2, 1.0)
-	card_control.add_child(progress_bg)
-
-	var progress_fill = ColorRect.new()
-	var fill_width = 300 * (player_influence / 100.0)
-	progress_fill.size = Vector2(fill_width, 20)
-	progress_fill.position = Vector2(10, 90)
-	if player_influence >= 50:
-		progress_fill.color = Color(0.3, 1.0, 0.3, 1.0)
-	elif player_influence >= 25:
-		progress_fill.color = Color(0.8, 0.8, 0.3, 1.0)
-	else:
-		progress_fill.color = Color(1.0, 0.4, 0.4, 1.0)
-	card_control.add_child(progress_fill)
-
-	var percent_label = Label.new()
-	percent_label.text = str(player_influence) + "%"
-	percent_label.position = Vector2(145, 92)
-	percent_label.add_theme_font_size_override("font_size", 14)
-	percent_label.add_theme_color_override("font_color", Color.BLACK)
-	card_control.add_child(percent_label)
+	create_progress_bar_in_card(player_influence, Vector2(10, 90), card)
 
 	# Доход
 	var income = districts_system.get_district_income(district["name"], "Игрок")
@@ -278,12 +252,12 @@ func create_district_card_in_container(district: Dictionary, container: VBoxCont
 	income_text.position = Vector2(10, 120)
 	income_text.add_theme_font_size_override("font_size", 14)
 	income_text.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7, 1.0))
-	card_control.add_child(income_text)
+	card.add_child(income_text)
 
 	# Кнопка подробностей
 	var details_btn = Button.new()
 	details_btn.custom_minimum_size = Vector2(180, 45)
-	details_btn.position = Vector2(460, 100)
+	details_btn.position = Vector2(470, 100)
 	details_btn.text = "ПОДРОБНЕЕ"
 
 	var style_details = StyleBoxFlat.new()
@@ -300,4 +274,33 @@ func create_district_card_in_container(district: Dictionary, container: VBoxCont
 	details_btn.pressed.connect(func():
 		district_selected.emit(district_name_str)
 	)
-	card_control.add_child(details_btn)
+	card.add_child(details_btn)
+
+# Прогресс-бар для карточки внутри ScrollContainer
+func create_progress_bar_in_card(value: int, pos: Vector2, parent: Control):
+	var progress_bg = ColorRect.new()
+	progress_bg.size = Vector2(300, 20)
+	progress_bg.position = pos
+	progress_bg.color = Color(0.2, 0.2, 0.2, 1.0)
+	parent.add_child(progress_bg)
+
+	var progress_fill = ColorRect.new()
+	var fill_width = 300 * (value / 100.0)
+	progress_fill.size = Vector2(fill_width, 20)
+	progress_fill.position = pos
+
+	if value >= 50:
+		progress_fill.color = Color(0.3, 1.0, 0.3, 1.0)
+	elif value >= 25:
+		progress_fill.color = Color(0.8, 0.8, 0.3, 1.0)
+	else:
+		progress_fill.color = Color(1.0, 0.4, 0.4, 1.0)
+
+	parent.add_child(progress_fill)
+
+	var percent_label = Label.new()
+	percent_label.text = str(value) + "%"
+	percent_label.position = pos + Vector2(135, 2)
+	percent_label.add_theme_font_size_override("font_size", 14)
+	percent_label.add_theme_color_override("font_color", Color.BLACK)
+	parent.add_child(percent_label)
