@@ -236,7 +236,6 @@ func create_ui():
 		stats_btn.add_theme_font_size_override("font_size", 18)
 		stats_btn.add_theme_color_override("font_color", Color.WHITE)
 
-		var member_idx = i
 		stats_btn.pressed.connect(func(): show_stats_window(member_idx))
 		card_container.add_child(stats_btn)  # ✅ В карточку!
 	
