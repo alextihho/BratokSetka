@@ -6,10 +6,12 @@ signal party_completed()
 
 var time_system
 var player_stats
+var log_system  # ✅ НОВОЕ
 
 func _ready():
 	time_system = get_node_or_null("/root/TimeSystem")
 	player_stats = get_node_or_null("/root/PlayerStats")
+	log_system = get_node_or_null("/root/LogSystem")  # ✅ НОВОЕ
 	print("🍺 Система бара загружена")
 
 # Показать меню бара
@@ -90,7 +92,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 		rest_btn.position = Vector2(480, y_pos + 25)
 		rest_btn.text = "ОТДОХНУТЬ"
 		rest_btn.disabled = player_data["balance"] < option["cost"]
-		
+		rest_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 		var style = StyleBoxFlat.new()
 		style.bg_color = Color(0.3, 0.6, 0.3, 1.0) if not rest_btn.disabled else Color(0.3, 0.3, 0.3, 1.0)
 		rest_btn.add_theme_stylebox_override("normal", style)
@@ -141,7 +144,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 		party_btn.custom_minimum_size = Vector2(660, 60)
 		party_btn.position = Vector2(30, y_pos)
 		party_btn.text = "🍻 БУХАТЬ С БАНДОЙ"
-		
+		party_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 		var style_party = StyleBoxFlat.new()
 		style_party.bg_color = Color(0.6, 0.3, 0.2, 1.0)
 		party_btn.add_theme_stylebox_override("normal", style_party)
@@ -160,7 +164,8 @@ func show_bar_menu(main_node: Node, player_data: Dictionary, gang_members: Array
 	close_btn.custom_minimum_size = Vector2(680, 50)
 	close_btn.position = Vector2(20, 1100)
 	close_btn.text = "УЙТИ"
-	
+	close_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
@@ -177,24 +182,35 @@ func rest_at_bar(main_node: Node, player_data: Dictionary, option: Dictionary, b
 	if player_data["balance"] < option["cost"]:
 		main_node.show_message("❌ Недостаточно денег!")
 		return
-	
+
 	# Списываем деньги
 	player_data["balance"] -= option["cost"]
-	
+
 	# Восстанавливаем HP
 	var old_hp = player_data["health"]
 	player_data["health"] = min(100, player_data["health"] + option["hp"])
 	var restored = player_data["health"] - old_hp
-	
+
 	# Добавляем время
 	if time_system:
 		time_system.add_hours(option["hours"])
-	
+
+	# ✅ НОВОЕ: Художественные логи событий
+	var event_texts = [
+		"Вы заказали пива и устроились в тихом уголке. Приятная музыка, атмосфера расслабляющая.",
+		"Бармен налил вам что-то крепкое. Голова немного закружилась, но становится легче.",
+		"За соседним столиком пьяный мужик рассказывает анекдоты. Смешно и грустно одновременно.",
+		"В углу играют на гитаре. Знакомые мотивы 90-х, ностальгия..."
+	]
+	if log_system:
+		var random_event = event_texts[randi() % event_texts.size()]
+		log_system.add_event_log(random_event)
+
 	main_node.show_message("😴 Вы отдохнули %d часов\n❤️ +%d HP" % [option["hours"], restored])
 	main_node.update_ui()
-	
+
 	rest_completed.emit()
-	
+
 	# Обновляем меню
 	bar_menu.queue_free()
 	await main_node.get_tree().create_timer(0.5).timeout
@@ -294,7 +310,8 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	party_btn.custom_minimum_size = Vector2(300, 70)
 	party_btn.position = Vector2(210, 750)
 	party_btn.text = "🍺 БУХАТЬ!"
-	
+	party_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_party = StyleBoxFlat.new()
 	style_party.bg_color = Color(0.7, 0.3, 0.2, 1.0)
 	party_btn.add_theme_stylebox_override("normal", style_party)
@@ -314,7 +331,8 @@ func show_party_menu(main_node: Node, player_data: Dictionary, gang_members: Arr
 	cancel_btn.custom_minimum_size = Vector2(640, 50)
 	cancel_btn.position = Vector2(40, 960)
 	cancel_btn.text = "ОТМЕНА"
-	
+	cancel_btn.z_index = 10  # ✅ ФИКС: Поверх overlay
+
 	var style_cancel = StyleBoxFlat.new()
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
@@ -372,10 +390,21 @@ func start_party(main_node: Node, player_data: Dictionary, gang_members: Array, 
 	# Добавляем время
 	if time_system:
 		time_system.add_hours(randi_range(2, 4))
-	
+
+	# ✅ НОВОЕ: Художественные логи событий для вечеринки
+	var party_events = [
+		"Банда зажигает! Водка льется рекой, анекдоты один лучше другого. Вот это жизнь!",
+		"Кто-то включил кассету с Сектором Газа. Вся банда орет 'Лирику!' и бьет кружками по столу.",
+		"Серега рассказал байку про ментов. Все ржут до слез. Потом еще по сто грамм.",
+		"Мужики играют в карты, девки танцуют. Классная атмосфера, все довольны!"
+	]
+	if log_system:
+		var random_event = party_events[randi() % party_events.size()]
+		log_system.add_event_log(random_event)
+
 	main_node.update_ui()
 	party_completed.emit()
-	
+
 	party_menu.queue_free()
 	await main_node.get_tree().create_timer(1.0).timeout
 	show_bar_menu(main_node, player_data, gang_members)

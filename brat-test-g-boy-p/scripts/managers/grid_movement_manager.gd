@@ -119,7 +119,7 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	menu_bg.color = Color(0.1, 0.1, 0.1, 0.95)
 	menu_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(menu_bg)
-	
+
 	var title = Label.new()
 	if building_name != "":
 		title.text = "🏢 ПЕРЕЙТИ: " + building_name

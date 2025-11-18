@@ -6,6 +6,7 @@ signal battle_ended(victory: bool)
 # Модули
 var battle_logic
 var battle_avatars
+var battle_enemy  # ✅ НОВОЕ: Модуль генерации врагов
 
 # UI элементы
 var battle_log_lines: Array = []
@@ -15,20 +16,12 @@ var max_log_lines: int = 8
 var player_stats
 var player_data
 var gang_members: Array = []
-
-# Шаблоны врагов
-var enemy_templates = {
-	"drunkard": {"name": "Пьяный", "hp": 40, "damage": 5, "defense": 0, "morale": 30, "accuracy": 0.5, "reward": 20},
-	"gopnik": {"name": "Гопник", "hp": 60, "damage": 10, "defense": 2, "morale": 50, "accuracy": 0.65, "reward": 50},
-	"thug": {"name": "Хулиган", "hp": 80, "damage": 15, "defense": 5, "morale": 60, "accuracy": 0.70, "reward": 80},
-	"bandit": {"name": "Бандит", "hp": 100, "damage": 20, "defense": 8, "morale": 70, "accuracy": 0.75, "reward": 120},
-	"guard": {"name": "Охранник", "hp": 120, "damage": 25, "defense": 15, "morale": 80, "accuracy": 0.80, "reward": 150},
-	"boss": {"name": "Главарь", "hp": 200, "damage": 35, "defense": 20, "morale": 100, "accuracy": 0.85, "reward": 300}
-}
+var car_data = null  # ✅ НОВОЕ: Данные машины (если бой в машине)
 
 func _ready():
 	layer = 200
 	player_stats = get_node("/root/PlayerStats")
+	battle_enemy = get_node_or_null("/root/BattleEnemy")  # ✅ НОВОЕ: Получаем систему врагов
 	
 	# Создаём модули
 	battle_logic = Node.new()
@@ -48,9 +41,10 @@ func _ready():
 	battle_avatars.target_selected.connect(_on_target_selected)
 	battle_avatars.avatar_clicked.connect(_on_avatar_clicked)
 
-func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battle: bool = false, p_gang_members: Array = []):
+func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battle: bool = false, p_gang_members: Array = [], p_car_data = null):
 	player_data = p_player_data
 	gang_members = p_gang_members
+	car_data = p_car_data  # ✅ НОВОЕ: Сохраняем данные машины
 	
 	# Формируем команду игрока
 	var player_team = []
@@ -116,30 +110,95 @@ func setup(p_player_data: Dictionary, enemy_type: String = "gopnik", first_battl
 	else:
 		add_to_log("ℹ️ Вы один против всех...")
 
+	# ✅ НОВОЕ: Применяем бонусы машины если бой в машине
+	if car_data:
+		var car_armor = car_data.get("armor", 0)
+		add_to_log("🚗 Бой в машине %s (Броня: +%d защиты)" % [car_data.get("name", "Машина"), car_armor])
+
+		# Даем бонус к защите всем членам команды
+		for fighter in player_team:
+			fighter["defense"] += car_armor
+			fighter["in_car"] = true
+
+		# Добавляем машину как "участника" который может быть уничтожен
+		# (не атакует, но может принять урон вместо команды)
+		var car_fighter = {
+			"name": car_data.get("name", "Машина"),
+			"hp": car_data.get("current_hp", 200),
+			"max_hp": car_data.get("max_hp", 200),
+			"damage": 0,  # Машина не атакует
+			"defense": car_data.get("stability", 50),  # Стабильность = защита машины
+			"morale": 100,
+			"accuracy": 0,
+			"is_player": true,
+			"alive": true,
+			"is_car": true,  # ✅ Флаг что это машина
+			"status_effects": {},
+			"weapon": "Машина",
+			"avatar": "res://assets/icons/car.png"
+		}
+		player_team.append(car_fighter)
+		add_to_log("🚗 Машина участвует в бою (HP: %d)" % car_fighter["hp"])
+
 	# Формируем команду врагов
 	var enemy_team = []
 	var enemy_count = get_enemy_count(enemy_type, player_team.size())
-	
-	for i in range(enemy_count):
-		var template = enemy_templates[enemy_type]
-		var enemy = {
-			"name": template["name"] + " " + str(i + 1),
-			"hp": template["hp"],
-			"max_hp": template["hp"],
-			"damage": template["damage"],
-			"defense": template["defense"],
-			"morale": template["morale"],
-			"accuracy": template["accuracy"],
-			"reward": template["reward"],
-			"alive": true,
-			"status_effects": {},
-			"weapon": "Кулаки",
-			"avatar": "res://assets/avatars/enemy_" + enemy_type + ".png",
-			"is_enemy": true,
-			"inventory": [],
-			"equipment": {}
-		}
-		enemy_team.append(enemy)
+
+	# ✅ НОВОЕ: Используем BattleEnemy для генерации врагов с экипировкой!
+	if battle_enemy:
+		print("🔍 BattleEnemy найден! Генерируем %d врагов типа '%s'" % [enemy_count, enemy_type])
+		var generated_enemies = battle_enemy.generate_enemies(enemy_type, enemy_count)
+		print("🔍 Сгенерировано врагов: %d" % generated_enemies.size())
+		for enemy_data in generated_enemies:
+			# Конвертируем данные из BattleEnemy в формат для боя
+			var enemy = {
+				"name": enemy_data.get("name", "Враг"),
+				"hp": enemy_data.get("hp", 60),
+				"max_hp": enemy_data.get("max_hp", 60),
+				"damage": (enemy_data.get("damage_min", 5) + enemy_data.get("damage_max", 10)) / 2,  # ✅ Средний урон
+				"damage_min": enemy_data.get("damage_min", 5),  # ✅ Сохраняем min
+				"damage_max": enemy_data.get("damage_max", 10),  # ✅ Сохраняем max
+				"defense": enemy_data.get("defense", 0),
+				"morale": 60,
+				"accuracy": 0.65,
+				"alive": true,
+				"status_effects": {},
+				"weapon": enemy_data.get("equipped_weapon", "Кулаки"),  # ✅ Экипировка!
+				"armor": enemy_data.get("equipped_armor", null),
+				"helmet": enemy_data.get("equipped_helmet", null),
+				"avatar": "res://assets/avatars/enemy_" + enemy_type + ".png",
+				"is_enemy": true,
+				"inventory": [],
+				"equipment": {},
+				"faction": enemy_data.get("faction", "street"),  # ✅ Фракция
+				"level": enemy_data.get("level", 1)  # ✅ Уровень
+			}
+			enemy_team.append(enemy)
+
+			# ✅ Лог экипировки
+			if enemy_data.has("equipped_weapon"):
+				add_to_log("   🗡️ %s: %s" % [enemy["name"], enemy_data["equipped_weapon"]])
+	else:
+		# ✅ FALLBACK: старый метод если BattleEnemy не найден
+		print("⚠️ BattleEnemy не найден! Используется старая генерация врагов")
+		for i in range(enemy_count):
+			var enemy = {
+				"name": "Враг #" + str(i + 1),
+				"hp": 60,
+				"max_hp": 60,
+				"damage": 10,
+				"defense": 0,
+				"morale": 50,
+				"accuracy": 0.65,
+				"alive": true,
+				"status_effects": {},
+				"weapon": "Кулаки",
+				"avatar": "res://assets/avatars/enemy_gopnik.png",
+				"is_enemy": true,
+				"inventory": [],
+				"equipment": {}
+			}
+			enemy_team.append(enemy)
 	
 	# Инициализируем боевую логику
 	battle_logic.initialize(player_team, enemy_team)
@@ -160,8 +219,10 @@ func get_enemy_count(enemy_type: String, player_count: int) -> int:
 		"thug": base_count = clamp(player_count + randi_range(1, 2), 2, 6)
 		"bandit": base_count = clamp(player_count + randi_range(1, 3), 2, 8)
 		"guard": base_count = clamp(player_count + randi_range(2, 4), 3, 10)
+		"cop": base_count = clamp(player_count + randi_range(1, 2), 3, 7)  # ✅ НОВОЕ: Менты
+		"swat": base_count = clamp(player_count + randi_range(2, 4), 5, 10)  # ✅ НОВОЕ: ОМОН
 		"boss": base_count = clamp(player_count + randi_range(3, 5), 4, 12)
-	
+
 	add_to_log("👹 Врагов: %d (тип: %s)" % [base_count, enemy_type])
 	return base_count
 
@@ -609,31 +670,42 @@ func show_character_info(character_data: Dictionary, is_player_team: bool):
 	var info_window = CanvasLayer.new()
 	info_window.layer = 300
 	add_child(info_window)
-	
+
 	var bg = ColorRect.new()
 	bg.size = Vector2(600, 800)
 	bg.position = Vector2(60, 200)
 	bg.color = Color(0.1, 0.1, 0.1, 0.95)
 	info_window.add_child(bg)
-	
+
 	var title = Label.new()
 	title.text = "📊 Информация: " + character_data["name"]
 	title.position = Vector2(200, 220)
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	info_window.add_child(title)
-	
-	var stats_text = "❤️ HP: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
-	stats_text += "⚔️ Урон: %d\n" % character_data["damage"]
-	stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
-	stats_text += "🎯 Меткость: %.1f\n" % character_data["accuracy"]
-	stats_text += "💪 Мораль: %d\n" % character_data["morale"]
-	stats_text += "🔫 Оружие: %s\n" % character_data.get("weapon", "Кулаки")
-	
+
+	var stats_text = ""
+
+	# ✅ НОВОЕ: Разные характеристики для машины и человека
+	if character_data.get("is_car", false):
+		# МАШИНА - показываем специфичные характеристики
+		stats_text += "🛞 Состояние: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
+		stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
+		stats_text += "⚡ Скорость: %d\n" % character_data.get("speed", 50)
+		stats_text += "⚙️ Стабильность: %d\n" % character_data.get("stability", 50)
+	else:
+		# ЧЕЛОВЕК - обычные характеристики
+		stats_text += "❤️ HP: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
+		stats_text += "⚔️ Урон: %d\n" % character_data["damage"]
+		stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
+		stats_text += "🎯 Меткость: %.1f\n" % character_data["accuracy"]
+		stats_text += "💪 Мораль: %d\n" % character_data["morale"]
+		stats_text += "🔫 Оружие: %s\n" % character_data.get("weapon", "Кулаки")
+
 	var status_text = battle_logic.get_status_text(character_data)
 	if status_text != "":
 		stats_text += "📋 Статусы: %s\n" % status_text
-	
+
 	var stats_label = Label.new()
 	stats_label.text = stats_text
 	stats_label.position = Vector2(80, 280)

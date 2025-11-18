@@ -12,7 +12,10 @@ var enemy_reward_templates = {
 	"thug": {"money": 80, "reputation": 15},
 	"bandit": {"money": 120, "reputation": 20},
 	"guard": {"money": 150, "reputation": 25},
-	"boss": {"money": 300, "reputation": 50}
+	"boss": {"money": 300, "reputation": 50},
+	# ✅ НОВОЕ: Награды за ментов (выше риск = выше награда!)
+	"cop": {"money": 180, "reputation": 30},
+	"swat": {"money": 250, "reputation": 45}
 }
 
 # ✅ ИСПРАВЛЕНО: добавлен параметр game_controller
@@ -84,6 +87,8 @@ func show_enemy_selection_menu(main_node):
 		{"name": "Хулиган (средне)", "type": "thug", "desc": "3-6 врагов"},
 		{"name": "Бандит (сложно)", "type": "bandit", "desc": "4-8 врагов"},
 		{"name": "Охранник (очень сложно)", "type": "guard", "desc": "5-10 врагов"},
+		{"name": "🚔 Мент (ОПАСНО!)", "type": "cop", "desc": "3-7 врагов"},
+		{"name": "🚨 ОМОН (СМЕРТЕЛЬНО!)", "type": "swat", "desc": "5-10 врагов"},
 		{"name": "Главарь (БОСС)", "type": "boss", "desc": "6-12 врагов"}
 	]
 	
@@ -130,22 +135,31 @@ func show_enemy_selection_menu(main_node):
 
 func start_battle(main_node: Node, enemy_type: String = "gopnik", is_first_battle: bool = false):
 	print("⚔️ Запуск боя: " + enemy_type)
-	
+
 	var battle_script = load("res://scripts/battle/battle.gd")
 	if not battle_script:
 		main_node.show_message("❌ Система боёв не найдена!")
 		return
-	
+
 	var battle = battle_script.new()
 	battle.name = "BattleScene"
 	main_node.add_child(battle)
-	
+
 	# Передаём gang_members (если есть)
 	var gang_members = []
 	if "gang_members" in main_node:
 		gang_members = main_node.gang_members
-	
-	battle.setup(main_node.player_data, enemy_type, is_first_battle, gang_members)
+
+	# ✅ НОВОЕ: Передаем информацию о машине если игрок в машине
+	var car_data = null
+	if main_node.player_data.get("in_car", false) and main_node.player_data.get("car"):
+		var car_system = get_node_or_null("/root/CarSystem")
+		if car_system and car_system.cars_db.has(main_node.player_data["car"]):
+			car_data = car_system.cars_db[main_node.player_data["car"]].duplicate()
+			car_data["current_hp"] = car_data.get("max_hp", 200)  # Полное HP машины
+			print("🚗 Бой в машине: %s (HP: %d, Броня: %d)" % [car_data["name"], car_data["current_hp"], car_data.get("armor", 0)])
+
+	battle.setup(main_node.player_data, enemy_type, is_first_battle, gang_members, car_data)
 	
 	# ✅ ИСПРАВЛЕНО: Убран таймер - закрытие UI теперь ТОЛЬКО в battle.gd
 	battle.battle_ended.connect(func(victory):
@@ -165,7 +179,26 @@ func start_battle(main_node: Node, enemy_type: String = "gopnik", is_first_battl
 					if idx < main_node.gang_members.size():
 						main_node.gang_members[idx]["hp"] = max(1, gang_member["hp"])
 						print("💾 HP %s: %d" % [main_node.gang_members[idx]["name"], main_node.gang_members[idx]["hp"]])
-		
+
+			# ✅ НОВОЕ: Сохранение HP машины после боя
+			for fighter in battle.battle_logic.player_team:
+				if fighter.get("is_car", false):
+					var car_hp = fighter.get("hp", 0)
+					print("🚗 HP машины после боя: %d" % car_hp)
+
+					# Если машина уничтожена (HP <= 0)
+					if car_hp <= 0:
+						main_node.player_data.erase("car")
+						main_node.player_data["in_car"] = false
+						main_node.show_message("💥 Ваша машина уничтожена!")
+						var log_system = get_node_or_null("/root/LogSystem")
+						if log_system:
+							log_system.add_warning_log("💥 Машина уничтожена в бою!")
+					else:
+						# Сохраняем текущее HP машины (пока не реализовано полностью)
+						# TODO: Добавить систему сохранения HP машины в player_data
+						print("🚗 Машина выжила с HP: %d" % car_hp)
+
 		# Опыт банды
 		apply_gang_experience(main_node, battle.battle_logic, victory)
 		

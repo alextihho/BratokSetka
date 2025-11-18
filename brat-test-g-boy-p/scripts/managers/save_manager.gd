@@ -24,7 +24,14 @@ func save_game(player_data: Dictionary, gang_members: Array) -> bool:
 			"equipment": player_data.get("equipment", {}).duplicate(true),
 			"inventory": player_data.get("inventory", []).duplicate(true),
 			"pockets": player_data.get("pockets", [null, null, null]).duplicate(true),
-			"current_square": player_data.get("current_square", "6_2")
+			"current_square": player_data.get("current_square", "6_2"),
+			# ✅ НОВОЕ: Машина игрока
+			"car": player_data.get("car", null),
+			"car_condition": player_data.get("car_condition", 100.0),
+			"car_equipped": player_data.get("car_equipped", false),
+			"current_driver": player_data.get("current_driver", null),
+			# ✅ НОВОЕ: Первый бой
+			"first_battle_completed": player_data.get("first_battle_completed", false)
 		},
 		
 		# Банда

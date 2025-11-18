@@ -38,7 +38,7 @@ func create_log_ui():
 	bg.position = Vector2(360, 720)  # ✅ Поднято на 60px вверх
 	bg.color = Color(0.15, 0.15, 0.15, 0.95)
 	bg.name = "LogBackground"
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики по карте
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ Блокирует клики по карте
 	log_panel.add_child(bg)
 
 	# Заголовок
@@ -47,7 +47,7 @@ func create_log_ui():
 	title.position = Vector2(380, 730)  # ✅ Поднято на 60px
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-	title.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики
+	title.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ Блокирует клики
 	log_panel.add_child(title)
 
 	# ScrollContainer для логов
@@ -55,7 +55,7 @@ func create_log_ui():
 	scroll.position = Vector2(370, 760)  # ✅ Поднято на 60px
 	scroll.size = Vector2(330, 450)
 	scroll.name = "LogScroll"
-	scroll.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики по карте
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ Блокирует клики по карте
 	log_panel.add_child(scroll)
 	
 	# VBoxContainer для логов

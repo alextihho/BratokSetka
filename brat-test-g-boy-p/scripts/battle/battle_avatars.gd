@@ -21,26 +21,48 @@ func initialize(p_battle_logic, parent: CanvasLayer):
 
 # ========== СОЗДАНИЕ АВАТАРОК ==========
 func create_team_avatars(parent: CanvasLayer):
-	# ✅ ИСПРАВЛЕНО: Команда игрока (слева, НИЖЕ верхней панели)
-	var player_x = 30
-	var player_y = 250  # ✅ Было 170 → Теперь 250 (ниже UI на y=140)
-	
-	for i in range(battle_logic.player_team.size()):
-		create_avatar(battle_logic.player_team[i], Vector2(player_x, player_y), i, true, parent)
-		player_y += 130
-	
-	# ✅ ИСПРАВЛЕНО: Команда врагов (справа, тоже ниже UI)
-	var enemy_x = 470  # ✅ Было 500 → сдвинуто левее для места под HP-панель
-	var enemy_y = 250
-	
-	for i in range(battle_logic.enemy_team.size()):
-		create_avatar(battle_logic.enemy_team[i], Vector2(enemy_x, enemy_y), i, false, parent)
-		enemy_y += 130
+	# ✅ НОВОЕ: ScrollContainer для команды игрока (макс 4 видимых)
+	var player_scroll = ScrollContainer.new()
+	player_scroll.custom_minimum_size = Vector2(440, 520)  # 4 аватара * 130px = 520px
+	player_scroll.position = Vector2(10, 250)
+	player_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	player_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	player_scroll.name = "PlayerTeamScroll"
+	parent.add_child(player_scroll)
 
-func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side: bool, parent: CanvasLayer):
+	# ✅ VBoxContainer для автоматической расстановки
+	var player_vbox = VBoxContainer.new()
+	player_vbox.name = "PlayerTeamVBox"
+	player_scroll.add_child(player_vbox)
+
+	# ✅ Команда игрока (в ScrollContainer)
+	for i in range(battle_logic.player_team.size()):
+		create_avatar(battle_logic.player_team[i], Vector2(0, 0), i, true, player_vbox)
+
+	# ✅ ScrollContainer для команды врагов (тоже делаем прокручиваемым)
+	var enemy_scroll = ScrollContainer.new()
+	enemy_scroll.custom_minimum_size = Vector2(240, 520)  # Тоже 4 врага
+	enemy_scroll.position = Vector2(460, 250)
+	enemy_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	enemy_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	enemy_scroll.name = "EnemyTeamScroll"
+	parent.add_child(enemy_scroll)
+
+	# ✅ VBoxContainer для врагов
+	var enemy_vbox = VBoxContainer.new()
+	enemy_vbox.name = "EnemyTeamVBox"
+	enemy_scroll.add_child(enemy_vbox)
+
+	# ✅ Команда врагов (в ScrollContainer)
+	for i in range(battle_logic.enemy_team.size()):
+		create_avatar(battle_logic.enemy_team[i], Vector2(0, 0), i, false, enemy_vbox)
+
+func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side: bool, parent: Node):
 	var avatar_container = Control.new()
 	avatar_container.custom_minimum_size = Vector2(220, 120)  # ✅ Увеличена ширина для HP-панели
-	avatar_container.position = pos
+	# ✅ Position используется только если НЕ в VBoxContainer
+	if pos != Vector2(0, 0):
+		avatar_container.position = pos
 	avatar_container.name = ("Player" if is_player_side else "Enemy") + "Avatar_" + str(index)
 	avatar_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(avatar_container)
@@ -73,11 +95,16 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	hp_indicator.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_container.add_child(hp_indicator)
 	
-	# ✅ Иконка персонажа (эмодзи)
+	# ✅ Иконка персонажа (эмодзи) - МАШИНА vs ЧЕЛОВЕК
 	var icon = Label.new()
-	icon.text = "🤵" if is_player_side else "💀"
-	icon.position = Vector2(20, 15)
-	icon.add_theme_font_size_override("font_size", 40)
+	if fighter.get("is_car", false):
+		icon.text = "🚗"  # ✅ Иконка машины
+		icon.add_theme_font_size_override("font_size", 50)  # Больше размер
+		icon.position = Vector2(15, 10)
+	else:
+		icon.text = "🤵" if is_player_side else "💀"
+		icon.position = Vector2(20, 15)
+		icon.add_theme_font_size_override("font_size", 40)
 	icon.name = "Icon"
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	avatar_container.add_child(icon)
@@ -100,19 +127,23 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(hp_label)
 	
-	# ✅ Мораль
-	var morale_label = Label.new()
-	morale_label.text = "💪 %d" % fighter["morale"]
-	morale_label.position = Vector2(5, 22)
-	morale_label.add_theme_font_size_override("font_size", 11)
-	morale_label.add_theme_color_override("font_color", get_morale_color(fighter["morale"]))
-	morale_label.name = "MoraleLabel"
-	morale_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	info_panel.add_child(morale_label)
+	# ✅ Мораль (НЕ для машины)
+	if not fighter.get("is_car", false):
+		var morale_label = Label.new()
+		morale_label.text = "💪 %d" % fighter["morale"]
+		morale_label.position = Vector2(5, 22)
+		morale_label.add_theme_font_size_override("font_size", 11)
+		morale_label.add_theme_color_override("font_color", get_morale_color(fighter["morale"]))
+		morale_label.name = "MoraleLabel"
+		morale_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		info_panel.add_child(morale_label)
 	
-	# ✅ Урон
+	# ✅ Урон / Стабильность (для машины)
 	var damage_label = Label.new()
-	damage_label.text = "⚔️ %d" % fighter["damage"]
+	if fighter.get("is_car", false):
+		damage_label.text = "⚙️ Стаб: %d" % fighter.get("stability", 0)
+	else:
+		damage_label.text = "⚔️ %d" % fighter["damage"]
 	damage_label.position = Vector2(5, 39)
 	damage_label.add_theme_font_size_override("font_size", 10)
 	damage_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
@@ -120,20 +151,34 @@ func create_avatar(fighter: Dictionary, pos: Vector2, index: int, is_player_side
 	damage_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(damage_label)
 	
-	# ✅ Защита
+	# ✅ Защита / Прочность (для машины)
 	var defense_label = Label.new()
-	defense_label.text = "🛡️ %d" % fighter["defense"]
+	if fighter.get("is_car", false):
+		defense_label.text = "🔩 Прочн: %d" % fighter.get("max_hp", 0)
+	else:
+		defense_label.text = "🛡️ %d" % fighter["defense"]
 	defense_label.position = Vector2(5, 52)
 	defense_label.add_theme_font_size_override("font_size", 10)
 	defense_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.9, 1.0))
 	defense_label.name = "DefenseLabel"
 	defense_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	info_panel.add_child(defense_label)
-	
+
+	# ✅ НОВОЕ: ОРУЖИЕ (НЕ для машины)
+	if not fighter.get("is_car", false):
+		var weapon_label = Label.new()
+		weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
+		weapon_label.position = Vector2(5, 65)
+		weapon_label.add_theme_font_size_override("font_size", 9)
+		weapon_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+		weapon_label.name = "WeaponLabel"
+		weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		info_panel.add_child(weapon_label)
+
 	# ✅ Статусы
 	var status_label = Label.new()
 	status_label.text = battle_logic.get_status_text(fighter)
-	status_label.position = Vector2(5, 68)
+	status_label.position = Vector2(5, 80)
 	status_label.add_theme_font_size_override("font_size", 9)
 	status_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1.0))
 	status_label.name = "StatusLabel"
@@ -273,7 +318,12 @@ func update_avatar_ui(fighter: Dictionary, index: int, is_player_side: bool):
 		var defense_label = info_panel.get_node_or_null("DefenseLabel")
 		if defense_label:
 			defense_label.text = "🛡️ %d" % fighter["defense"]
-		
+
+		# ✅ НОВОЕ: Обновление оружия
+		var weapon_label = info_panel.get_node_or_null("WeaponLabel")
+		if weapon_label:
+			weapon_label.text = "🔫 %s" % fighter.get("weapon", "Кулаки")
+
 		# Обновление статусов
 		var status_label = info_panel.get_node_or_null("StatusLabel")
 		if status_label:
