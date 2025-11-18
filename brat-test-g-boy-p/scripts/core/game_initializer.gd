@@ -10,6 +10,12 @@ func load_autoload_systems(game_controller):
 
 	print("📦 Загружаем autoload системы...")
 
+	# ✅ ОТЛАДКА: Проверяем какие autoload ноды существуют
+	print("🔍 Проверяем autoload ноды в /root/:")
+	var root = game_controller.get_tree().root
+	for child in root.get_children():
+		print("   - %s (type: %s)" % [child.name, child.get_class()])
+
  
 
 	game_controller.items_db = get_node("/root/ItemsDB")
@@ -38,15 +44,22 @@ func load_autoload_systems(game_controller):
 
 	# ✅ КРИТИЧНЫЕ СИСТЕМЫ (должны быть обязательно)
 
+	print("⏳ Загружаем критичные системы...")
+
 	game_controller.time_system = get_node_or_null("/root/TimeSystem")
+	print("   TimeSystem: %s" % ("✅ LOADED" if game_controller.time_system else "❌ NULL"))
 
 	game_controller.log_system = get_node_or_null("/root/LogSystem")
+	print("   LogSystem: %s" % ("✅ LOADED" if game_controller.log_system else "❌ NULL"))
 
 	game_controller.bar_system = get_node_or_null("/root/BarSystem")
+	print("   BarSystem: %s" % ("✅ LOADED" if game_controller.bar_system else "❌ NULL"))
 
 	game_controller.car_system = get_node_or_null("/root/CarSystem")
+	print("   CarSystem: %s" % ("✅ LOADED" if game_controller.car_system else "❌ NULL"))
 
 	game_controller.police_system = get_node_or_null("/root/PoliceSystem")
+	print("   PoliceSystem: %s" % ("✅ LOADED" if game_controller.police_system else "❌ NULL"))
 
  
 
