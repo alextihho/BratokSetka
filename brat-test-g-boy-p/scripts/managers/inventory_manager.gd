@@ -42,6 +42,13 @@ func show_inventory_for_member(main_node: Node, member_index: int, gang_members:
 		show_item_popup(main_node, item_name, from_pocket, pocket_index, current_data, inv_menu, member_index, gang_members, player_data)
 	)
 
+	# ✅ НОВОЕ: Возврат в меню банды
+	inv_menu.back_to_gang.connect(func():
+		var gang_manager = get_node("/root/GangManager")
+		if gang_manager:
+			gang_manager.show_gang_menu(main_node, gang_members)
+	)
+
 # Показать попап действий с предметом
 func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pocket_index: int, current_data: Dictionary, inv_menu: CanvasLayer, member_index: int, gang_members: Array, player_data: Dictionary):
 	var items_db = get_node("/root/ItemsDB")
