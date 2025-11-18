@@ -241,13 +241,33 @@ func try_run() -> Dictionary:
 # ========== ХОД ВРАГА ==========
 func enemy_turn() -> Array:
 	var actions = []
-	
+
 	for i in range(enemy_team.size()):
 		var enemy = enemy_team[i]
 		if not enemy["alive"] or enemy["status_effects"].has("stunned"):
 			continue
-		
-		var target = get_random_alive_player()
+
+		# ✅ НОВОЕ: Логика выбора цели для боя в машине
+		var target = null
+		var enemy_weapon = enemy.get("weapon", "Кулаки")
+		var is_melee_weapon = enemy_weapon in ["Кулаки", "Нож", "Кухонный нож", "Кастет", "Бита", "Монтировка", "Цепь", "Мачете", "Топор", "Катана"]
+
+		# Если враг с ближним боем - атакует машину первой (если она есть)
+		if is_melee_weapon:
+			var car_target = null
+			for fighter in player_team:
+				if fighter.get("is_car", false) and fighter["alive"]:
+					car_target = fighter
+					break
+
+			if car_target:
+				target = car_target
+			else:
+				target = get_random_alive_player()
+		else:
+			# Враг с дальним боем - атакует случайного игрока/машину
+			target = get_random_alive_player()
+
 		if not target:
 			break
 		
