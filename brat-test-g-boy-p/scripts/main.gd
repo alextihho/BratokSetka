@@ -83,7 +83,14 @@ var gang_members = [
 		"equipment": {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null},
 		"inventory": [],
 		"pockets": [null, null, null],
-		"is_active": true
+		"is_active": true,
+		"stats": {
+			"kills": {"bandits": 0, "civilians": 0, "cops": 0, "swat": 0},
+			"robberies": 0,
+			"carjackings": 0,
+			"lockpicks": 0,
+			"lost_members": 0
+		}
 	}
 ]
 

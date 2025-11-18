@@ -236,7 +236,8 @@ func create_ui():
 		stats_btn.add_theme_font_size_override("font_size", 18)
 		stats_btn.add_theme_color_override("font_color", Color.WHITE)
 
-		stats_btn.pressed.connect(func(): show_stats_window())
+		var member_idx = i
+		stats_btn.pressed.connect(func(): show_stats_window(member_idx))
 		card_container.add_child(stats_btn)  # ✅ В карточку!
 	
 	var close_btn = Button.new()
@@ -448,7 +449,15 @@ func hire_candidate(candidate: Dictionary, cost: int, hire_menu: CanvasLayer):
 		candidate["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
 	if not candidate.has("pockets"):
 		candidate["pockets"] = [null, null, null]
-	
+	if not candidate.has("stats"):
+		candidate["stats"] = {
+			"kills": {"bandits": 0, "civilians": 0, "cops": 0, "swat": 0},
+			"robberies": 0,
+			"carjackings": 0,
+			"lockpicks": 0,
+			"lost_members": 0
+		}
+
 	main_node.gang_members.append(candidate)
 	
 	main_node.show_message("✅ " + candidate["name"] + " нанят! Активируйте его в меню банды.")
@@ -460,57 +469,101 @@ func hire_candidate(candidate: Dictionary, cost: int, hire_menu: CanvasLayer):
 	var gang_manager = get_node("/root/GangManager")
 	gang_manager.show_gang_menu(main_node, main_node.gang_members)
 
-func show_stats_window():
-	var player_stats = get_node("/root/PlayerStats")
-	if not player_stats:
+func show_stats_window(member_index: int):
+	if member_index < 0 or member_index >= gang_members.size():
 		return
-	
+
+	var member = gang_members[member_index]
+	var player_stats = get_node("/root/PlayerStats")
+
+	# ✅ Инициализируем статистику, если её нет
+	if not member.has("stats"):
+		member["stats"] = {
+			"kills": {"bandits": 0, "civilians": 0, "cops": 0, "swat": 0},
+			"robberies": 0,
+			"carjackings": 0,
+			"lockpicks": 0,
+			"lost_members": 0  # Сколько членов банды потеряно при этом члене
+		}
+
 	var stats_popup = CanvasLayer.new()
 	stats_popup.name = "StatsPopup"
 	stats_popup.layer = 210
 	get_parent().add_child(stats_popup)
-	
+
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(720, 1280)
 	overlay.color = Color(0, 0, 0, 0.8)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	stats_popup.add_child(overlay)
-	
+
 	var bg = ColorRect.new()
-	bg.size = Vector2(680, 950)
-	bg.position = Vector2(20, 165)
+	bg.size = Vector2(680, 1000)
+	bg.position = Vector2(20, 140)
 	bg.color = Color(0.05, 0.05, 0.05, 0.98)
 	stats_popup.add_child(bg)
-	
+
 	var title = Label.new()
-	title.text = "📊 СТАТИСТИКА"
-	title.position = Vector2(250, 185)
-	title.add_theme_font_size_override("font_size", 26)
+	title.text = "📊 СТАТИСТИКА: " + member["name"]
+	title.position = Vector2(50, 160)
+	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	stats_popup.add_child(title)
-	
-	var stats_text = player_stats.get_stats_text()
+
+	var stats_text = ""
+
+	# ✅ Для главного игрока (индекс 0) - показываем характеристики
+	if member_index == 0 and player_stats:
+		stats_text += player_stats.get_stats_text() + "\n\n"
+
+	# ✅ Индивидуальная статистика для всех
+	stats_text += "═══════════════════════\n"
+	stats_text += "🎯 БОЕВАЯ СТАТИСТИКА\n"
+	stats_text += "═══════════════════════\n\n"
+
+	var kills = member["stats"]["kills"]
+	var total_kills = kills["bandits"] + kills["civilians"] + kills["cops"] + kills["swat"]
+	stats_text += "💀 Убийства: %d\n" % total_kills
+	stats_text += "   • Бандиты: %d\n" % kills["bandits"]
+	stats_text += "   • Мирные: %d\n" % kills["civilians"]
+	stats_text += "   • Менты: %d\n" % kills["cops"]
+	stats_text += "   • ОМОН: %d\n\n" % kills["swat"]
+
+	stats_text += "═══════════════════════\n"
+	stats_text += "🔨 КРИМИНАЛЬНАЯ АКТИВНОСТЬ\n"
+	stats_text += "═══════════════════════\n\n"
+
+	stats_text += "💰 Ограблений: %d\n" % member["stats"]["robberies"]
+	stats_text += "🚗 Угонов: %d\n" % member["stats"]["carjackings"]
+	stats_text += "🔓 Взломов: %d\n\n" % member["stats"]["lockpicks"]
+
+	stats_text += "═══════════════════════\n"
+	stats_text += "👥 БАНДА\n"
+	stats_text += "═══════════════════════\n\n"
+
+	stats_text += "💔 Потеряно бойцов: %d\n" % member["stats"]["lost_members"]
+
 	var label = Label.new()
 	label.text = stats_text
-	label.position = Vector2(40, 235)
+	label.position = Vector2(40, 215)
 	label.add_theme_font_size_override("font_size", 17)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	stats_popup.add_child(label)
-	
+
 	var close_btn = Button.new()
 	close_btn.custom_minimum_size = Vector2(640, 50)
 	close_btn.position = Vector2(40, 1050)
 	close_btn.text = "ЗАКРЫТЬ"
-	
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
-	
+
 	var style_close_hover = StyleBoxFlat.new()
 	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
 	close_btn.add_theme_stylebox_override("hover", style_close_hover)
-	
+
 	close_btn.add_theme_font_size_override("font_size", 20)
 	close_btn.pressed.connect(func(): stats_popup.queue_free())
-	
+
 	stats_popup.add_child(close_btn)
