@@ -102,12 +102,14 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	# ✅ ОБНОВЛЕНО: Рассчитываем время пешком
 	var time_walk = distance * 30
 
-	# ✅ НОВОЕ: Проверяем есть ли машина и рассчитываем время на машине
-	var has_car = main_node.player_data.get("car") != null and main_node.player_data.get("car_equipped", false)
+	# ✅ НОВОЕ: Проверяем находится ли игрок в машине И есть ли у него машина
+	var in_car = main_node.player_data.get("in_car", false)
+	var has_car = main_node.player_data.get("car") != null
 	var time_car = 0
 	var car_name = ""
 
-	if has_car and movement_system:
+	# Если в машине, то машина доступна для использования
+	if in_car and has_car and movement_system:
 		# Используем новую функцию расчёта с учётом DRV скилла
 		time_car = movement_system.calculate_travel_time(current_square, target_square, main_node.player_data, movement_system.TransportType.CAR_LEVEL1)
 
@@ -130,7 +132,9 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(overlay)
 
-	var menu_height = 320 if not has_car else 420  # ✅ Больше высота если есть машина
+	# ✅ НОВОЕ: Высота меню зависит от того в машине или нет
+	# Если в машине - только кнопка машины (240px), если пешком - обе кнопки (320px)
+	var menu_height = 240 if in_car else (320 if not in_car and not has_car else 320)
 	var menu_bg = ColorRect.new()
 	menu_bg.size = Vector2(400, menu_height)
 	menu_bg.position = Vector2(160, 480)
@@ -142,7 +146,7 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	if building_name != "":
 		title.text = "🏢 ПЕРЕЙТИ: " + building_name
 	else:
-		title.text = "🚶 ПЕРЕДВИЖЕНИЕ"
+		title.text = "🚗 ПЕРЕДВИЖЕНИЕ" if in_car else "🚶 ПЕРЕДВИЖЕНИЕ"
 	title.position = Vector2(200, 500)
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
@@ -159,33 +163,34 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 
 	var y_pos = 610
 
-	# Кнопка "Идти пешком"
-	var walk_btn = Button.new()
-	walk_btn.custom_minimum_size = Vector2(360, 60)
-	walk_btn.position = Vector2(180, y_pos)
-	walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
-	walk_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+	# ✅ НОВОЕ: Кнопка "Идти пешком" показывается ТОЛЬКО когда НЕ в машине
+	if not in_car:
+		var walk_btn = Button.new()
+		walk_btn.custom_minimum_size = Vector2(360, 60)
+		walk_btn.position = Vector2(180, y_pos)
+		walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
+		walk_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 
-	var style_walk = StyleBoxFlat.new()
-	style_walk.bg_color = Color(0.2, 0.5, 0.2, 1.0)
-	walk_btn.add_theme_stylebox_override("normal", style_walk)
+		var style_walk = StyleBoxFlat.new()
+		style_walk.bg_color = Color(0.2, 0.5, 0.2, 1.0)
+		walk_btn.add_theme_stylebox_override("normal", style_walk)
 
-	var style_walk_hover = StyleBoxFlat.new()
-	style_walk_hover.bg_color = Color(0.3, 0.6, 0.3, 1.0)
-	walk_btn.add_theme_stylebox_override("hover", style_walk_hover)
+		var style_walk_hover = StyleBoxFlat.new()
+		style_walk_hover.bg_color = Color(0.3, 0.6, 0.3, 1.0)
+		walk_btn.add_theme_stylebox_override("hover", style_walk_hover)
 
-	walk_btn.add_theme_font_size_override("font_size", 20)
-	walk_btn.pressed.connect(func():
-		print("✅ Начало перехода ПЕШКОМ к: " + pending_target_square)
-		start_movement(pending_target_square, time_walk, building_name, "🚶")
-		close_movement_menu()
-	)
-	movement_menu.add_child(walk_btn)
+		walk_btn.add_theme_font_size_override("font_size", 20)
+		walk_btn.pressed.connect(func():
+			print("✅ Начало перехода ПЕШКОМ к: " + pending_target_square)
+			start_movement(pending_target_square, time_walk, building_name, "🚶")
+			close_movement_menu()
+		)
+		movement_menu.add_child(walk_btn)
 
-	y_pos += 80
+		y_pos += 80
 
-	# ✅ НОВОЕ: Кнопка "Ехать на машине" (если есть машина)
-	if has_car:
+	# ✅ НОВОЕ: Кнопка "Ехать на машине" (если В МАШИНЕ)
+	if in_car and has_car:
 		var car_btn = Button.new()
 		car_btn.custom_minimum_size = Vector2(360, 60)
 		car_btn.position = Vector2(180, y_pos)

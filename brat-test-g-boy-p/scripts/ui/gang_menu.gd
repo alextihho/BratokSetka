@@ -86,6 +86,13 @@ func create_ui():
 	scroll_container.custom_minimum_size = Vector2(700, 820)  # ✅ Высота для ГГ + 4 бандита
 	scroll_container.position = Vector2(10, 240)
 	scroll_container.size = Vector2(700, 820)
+
+	# ✅ НОВОЕ: Настройки для touch scroll (мобильные устройства)
+	scroll_container.scroll_vertical_enabled = true
+	scroll_container.scroll_horizontal_enabled = false
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.follow_focus = true  # Для touch drag
+
 	add_child(scroll_container)
 
 	# ✅ VBoxContainer для автоматической расстановки карточек
