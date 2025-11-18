@@ -92,33 +92,52 @@ func handle_grid_click(click_pos: Vector2):
 
 func show_movement_menu(target_square: String, click_pos: Vector2, building_name: String = ""):
 	close_movement_menu()
-	
+
 	pending_target_square = target_square
 	is_menu_open = true
-	
+
 	var current_square = grid_system.get_player_square()
 	var distance = grid_system.get_distance(current_square, target_square)
+
+	# ✅ ОБНОВЛЕНО: Рассчитываем время пешком
 	var time_walk = distance * 30
-	
+
+	# ✅ НОВОЕ: Проверяем есть ли машина и рассчитываем время на машине
+	var has_car = main_node.player_data.get("car") != null and main_node.player_data.get("car_equipped", false)
+	var time_car = 0
+	var car_name = ""
+
+	if has_car and movement_system:
+		# Используем новую функцию расчёта с учётом DRV скилла
+		time_car = movement_system.calculate_travel_time(current_square, target_square, main_node.player_data, movement_system.TransportType.CAR_LEVEL1)
+
+		var car_system = get_node_or_null("/root/CarSystem")
+		if car_system:
+			var car_id = main_node.player_data.get("car")
+			var car_db = car_system.cars_db.get(car_id)
+			if car_db:
+				car_name = car_db.get("name", "Машина")
+
 	movement_menu = CanvasLayer.new()
 	movement_menu.name = "MovementMenu"
 	movement_menu.layer = 150
 	main_node.add_child(movement_menu)
-	
+
 	var overlay = ColorRect.new()
 	overlay.size = Vector2(720, 1280)
 	overlay.position = Vector2(0, 0)
 	overlay.color = Color(0, 0, 0, 0.5)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(overlay)
-	
+
+	var menu_height = 320 if not has_car else 420  # ✅ Больше высота если есть машина
 	var menu_bg = ColorRect.new()
-	menu_bg.size = Vector2(400, 320)
+	menu_bg.size = Vector2(400, menu_height)
 	menu_bg.position = Vector2(160, 480)
 	menu_bg.color = Color(0.1, 0.1, 0.1, 0.95)
 	menu_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(menu_bg)
-	
+
 	var title = Label.new()
 	if building_name != "":
 		title.text = "🏢 ПЕРЕЙТИ: " + building_name
@@ -129,51 +148,82 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	movement_menu.add_child(title)
-	
+
 	var info = Label.new()
-	info.text = "Расстояние: %d квадратов\nВремя: ~%d мин" % [distance, time_walk]
-	info.position = Vector2(240, 550)
+	info.text = "Расстояние: %d квадратов" % distance
+	info.position = Vector2(280, 550)
 	info.add_theme_font_size_override("font_size", 16)
 	info.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	movement_menu.add_child(info)
-	
+
+	var y_pos = 610
+
+	# Кнопка "Идти пешком"
 	var walk_btn = Button.new()
 	walk_btn.custom_minimum_size = Vector2(360, 60)
-	walk_btn.position = Vector2(180, 630)
+	walk_btn.position = Vector2(180, y_pos)
 	walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
 	walk_btn.mouse_filter = Control.MOUSE_FILTER_STOP
-	
+
 	var style_walk = StyleBoxFlat.new()
 	style_walk.bg_color = Color(0.2, 0.5, 0.2, 1.0)
 	walk_btn.add_theme_stylebox_override("normal", style_walk)
-	
+
 	var style_walk_hover = StyleBoxFlat.new()
 	style_walk_hover.bg_color = Color(0.3, 0.6, 0.3, 1.0)
 	walk_btn.add_theme_stylebox_override("hover", style_walk_hover)
-	
+
 	walk_btn.add_theme_font_size_override("font_size", 20)
 	walk_btn.pressed.connect(func():
-		print("✅ Начало перехода к: " + pending_target_square)
-		start_movement(pending_target_square, time_walk, building_name)
+		print("✅ Начало перехода ПЕШКОМ к: " + pending_target_square)
+		start_movement(pending_target_square, time_walk, building_name, "🚶")
 		close_movement_menu()
 	)
 	movement_menu.add_child(walk_btn)
-	
+
+	y_pos += 80
+
+	# ✅ НОВОЕ: Кнопка "Ехать на машине" (если есть машина)
+	if has_car:
+		var car_btn = Button.new()
+		car_btn.custom_minimum_size = Vector2(360, 60)
+		car_btn.position = Vector2(180, y_pos)
+		car_btn.text = "🚗 %s (~%d мин)" % [car_name, time_car]
+		car_btn.mouse_filter = Control.MOUSE_FILTER_STOP
+
+		var style_car = StyleBoxFlat.new()
+		style_car.bg_color = Color(0.2, 0.4, 0.7, 1.0)
+		car_btn.add_theme_stylebox_override("normal", style_car)
+
+		var style_car_hover = StyleBoxFlat.new()
+		style_car_hover.bg_color = Color(0.3, 0.5, 0.8, 1.0)
+		car_btn.add_theme_stylebox_override("hover", style_car_hover)
+
+		car_btn.add_theme_font_size_override("font_size", 20)
+		car_btn.pressed.connect(func():
+			print("✅ Начало перехода НА МАШИНЕ к: " + pending_target_square)
+			start_movement(pending_target_square, time_car, building_name, "🚗")
+			close_movement_menu()
+		)
+		movement_menu.add_child(car_btn)
+
+		y_pos += 80
+
 	var cancel_btn = Button.new()
 	cancel_btn.custom_minimum_size = Vector2(360, 60)
-	cancel_btn.position = Vector2(180, 710)
+	cancel_btn.position = Vector2(180, y_pos)
 	cancel_btn.text = "❌ ОТМЕНА"
 	cancel_btn.mouse_filter = Control.MOUSE_FILTER_STOP
-	
+
 	var style_cancel = StyleBoxFlat.new()
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-	
+
 	var style_cancel_hover = StyleBoxFlat.new()
 	style_cancel_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
 	cancel_btn.add_theme_stylebox_override("hover", style_cancel_hover)
-	
+
 	cancel_btn.add_theme_font_size_override("font_size", 20)
 	cancel_btn.pressed.connect(func():
 		print("❌ Отмена")
@@ -188,85 +238,98 @@ func close_movement_menu():
 		is_menu_open = false
 		pending_target_square = ""
 
-func start_movement(target_square: String, time_minutes: int, building_name: String = ""):
+func start_movement(target_square: String, time_minutes: int, building_name: String = "", transport_icon: String = "🚶"):
 	var current_square = grid_system.get_player_square()
-	
+
 	is_moving = true
-	
-	print("🚶 Начало движения: %s → %s" % [current_square, target_square])
-	
+
+	print("🚶 Начало движения: %s → %s (%s)" % [current_square, target_square, transport_icon])
+
 	# ✅ ЛОГ: Начало движения
 	var log_system = get_node_or_null("/root/LogSystem")
 	if log_system:
 		if building_name != "":
-			log_system.add_movement_log("🚶 Идём к: %s (~%d мин)" % [building_name, time_minutes])
+			log_system.add_movement_log("%s Едем к: %s (~%d мин)" % [transport_icon, building_name, time_minutes])
 		else:
-			log_system.add_movement_log("🚶 Перемещение (~%d мин)" % time_minutes)
-	
-	show_movement_animation(time_minutes, building_name)
-	
+			log_system.add_movement_log("%s Перемещение (~%d мин)" % [transport_icon, time_minutes])
+
+	show_movement_animation(time_minutes, building_name, transport_icon)
+
 	if time_system:
 		time_system.add_minutes(time_minutes)
 		print("⏰ Время добавлено: +%d минут" % time_minutes)
-	
+
+	# ✅ НОВОЕ: Изнашиваем машину если едем на ней
+	if transport_icon == "🚗":
+		var car_system = get_node_or_null("/root/CarSystem")
+		if car_system:
+			var distance = grid_system.get_distance(current_square, target_square)
+			car_system.use_car(main_node.player_data, distance)
+
 	await main_node.get_tree().create_timer(1.5).timeout
-	
+
 	grid_system.set_player_square(target_square)
-	
+
 	if main_node.player_data:
 		main_node.player_data["current_square"] = target_square
-	
+
 	main_node.update_ui()
-	
+
 	is_moving = false
-	
+
 	movement_completed.emit(target_square)
-	
+
 	if building_name != "":
 		await main_node.get_tree().create_timer(0.3).timeout
 		print("🏢 Прибыли к зданию: " + building_name)
 		main_node.show_location_menu(building_name)
 
-func show_movement_animation(time_minutes: int, building_name: String):
+func show_movement_animation(time_minutes: int, building_name: String, transport_icon: String = "🚶"):
 	var anim_layer = CanvasLayer.new()
 	anim_layer.name = "MovementAnimation"
 	anim_layer.layer = 200
 	main_node.add_child(anim_layer)
-	
+
 	var bg = ColorRect.new()
 	bg.size = Vector2(720, 1280)
 	bg.color = Color(0, 0, 0, 0.7)
 	anim_layer.add_child(bg)
-	
+
 	var icon = Label.new()
-	icon.text = "🚶"
+	icon.text = transport_icon  # ✅ Используем переданную иконку
 	icon.position = Vector2(320, 540)
 	icon.add_theme_font_size_override("font_size", 64)
 	anim_layer.add_child(icon)
-	
+
 	var text = Label.new()
 	if building_name != "":
-		text.text = "Идём к зданию:\n" + building_name
+		if transport_icon == "🚗":
+			text.text = "Едем к зданию:\n" + building_name
+		else:
+			text.text = "Идём к зданию:\n" + building_name
 	else:
-		text.text = "Перемещение..."
+		if transport_icon == "🚗":
+			text.text = "Едем на машине..."
+		else:
+			text.text = "Перемещение..."
 	text.position = Vector2(240, 640)
 	text.add_theme_font_size_override("font_size", 22)
 	text.add_theme_color_override("font_color", Color.WHITE)
 	text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	anim_layer.add_child(text)
-	
+
 	var time_label = Label.new()
 	time_label.text = "⏱ ~" + str(time_minutes) + " минут"
 	time_label.position = Vector2(280, 710)
 	time_label.add_theme_font_size_override("font_size", 18)
 	time_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
 	anim_layer.add_child(time_label)
-	
+
 	var timer = Timer.new()
 	timer.wait_time = 1.5
 	timer.one_shot = true
 	main_node.add_child(timer)
-	
+
 	timer.timeout.connect(func():
 		if anim_layer and is_instance_valid(anim_layer):
 			anim_layer.queue_free()

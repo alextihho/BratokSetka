@@ -1,4 +1,4 @@
-# movement_system.gd (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+# movement_system.gd (ОБНОВЛЕНО - с навыком вождения)
 # Система передвижения по квадратам с затратой времени
 extends Node
 
@@ -8,6 +8,8 @@ signal movement_cancelled()
 
 var grid_system
 var time_system
+var player_stats
+var car_system
 
 # Типы передвижения
 enum TransportType {
@@ -16,12 +18,8 @@ enum TransportType {
 	CAR_LEVEL2  # Машина уровень 2 - 5 мин на квадрат
 }
 
-# Время на квадрат (в минутах)
-var transport_time = {
-	TransportType.WALK: 30,
-	TransportType.CAR_LEVEL1: 10,
-	TransportType.CAR_LEVEL2: 5
-}
+# Базовое время пешком
+const BASE_WALK_TIME = 30
 
 # Текущее передвижение
 var is_moving: bool = false
@@ -31,56 +29,98 @@ var movement_timer: Timer = null
 func _ready():
 	grid_system = null  # Будет установлен при initialize
 	time_system = get_node_or_null("/root/TimeSystem")
+	player_stats = get_node_or_null("/root/PlayerStats")
+	car_system = get_node_or_null("/root/CarSystem")
+	print("🚶 Система передвижения инициализирована (с DRV скиллом)")
 
 func initialize(p_grid_system):
 	grid_system = p_grid_system
 	print("🚶 Система передвижения инициализирована")
 
+# ✅ НОВОЕ: Рассчитать время на один квадрат с учётом машины и DRV скилла
+func get_time_per_square_with_skill(player_data: Dictionary, transport: TransportType) -> int:
+	if transport == TransportType.WALK:
+		return BASE_WALK_TIME
+
+	# Получаем данные о машине игрока
+	var car_id = player_data.get("car", null)
+	if not car_id or not car_system:
+		return BASE_WALK_TIME  # Нет машины - идём пешком
+
+	var car_db = car_system.cars_db.get(car_id)
+	if not car_db:
+		return BASE_WALK_TIME
+
+	var car_speed = car_db.get("speed", 100)
+
+	# Базовое время для машины: чем выше скорость, тем меньше времени
+	# Формула: 30 * (100 / car_speed)
+	# ВАЗ-2106 (120 км/ч): 30 * 100/120 = 25 мин
+	# Волга (140 км/ч): 30 * 100/140 = 21 мин
+	# BMW (180 км/ч): 30 * 100/180 = 16 мин
+	var base_car_time = BASE_WALK_TIME * 100.0 / car_speed
+
+	# Применяем бонус от навыка вождения (DRV)
+	var drv_level = 0
+	if player_stats:
+		drv_level = player_stats.get_stat("DRV")
+
+	# Каждый уровень DRV даёт 2% ускорения
+	# DRV 5 = 10% быстрее, DRV 10 = 20% быстрее
+	var drv_bonus = 1.0 - (drv_level * 0.02)
+	drv_bonus = max(0.5, drv_bonus)  # Минимум 50% от базового времени
+
+	var final_time = int(base_car_time * drv_bonus)
+
+	print("🚗 Машина: %s (speed %d) + DRV %d = %d мин/квадрат" % [car_db.get("name"), car_speed, drv_level, final_time])
+
+	return final_time
+
 # Начать движение к квадрату
-func move_to_square(from_square: String, to_square: String, transport: TransportType = TransportType.WALK) -> bool:
+func move_to_square(from_square: String, to_square: String, player_data: Dictionary, transport: TransportType = TransportType.WALK) -> bool:
 	if is_moving:
 		print("⚠️ Уже в движении!")
 		return false
-	
+
 	if not grid_system:
 		print("❌ Grid system не инициализирована!")
 		return false
-	
+
 	if from_square == to_square:
 		print("⚠️ Уже на этом квадрате")
 		return false
-	
+
 	# Проверяем что квадраты существуют
 	if not grid_system.grid_squares.has(from_square) or not grid_system.grid_squares.has(to_square):
 		print("❌ Неверные координаты квадратов")
 		return false
-	
+
 	# Рассчитываем расстояние
 	var distance = grid_system.get_distance(from_square, to_square)
 	if distance < 0:
 		return false
-	
-	# Рассчитываем время
-	var time_per_square = transport_time[transport]
+
+	# ✅ ОБНОВЛЕНО: Рассчитываем время с учётом машины и DRV скилла
+	var time_per_square = get_time_per_square_with_skill(player_data, transport)
 	var total_time = distance * time_per_square
-	
+
 	# Добавляем бонус/штраф за переход между районами
 	var from_district = grid_system.get_square_district(from_square)
 	var to_district = grid_system.get_square_district(to_square)
-	
+
 	if from_district != to_district:
 		total_time = int(total_time * 1.3)  # +30% времени при смене района
-	
+
 	print("🚶 Движение: %s → %s (%d квадратов, %d мин)" % [from_square, to_square, distance, total_time])
-	
+
 	# Запускаем таймер
 	start_movement_timer(from_square, to_square, total_time)
-	
+
 	is_moving = true
 	current_transport = transport
-	
+
 	movement_started.emit(from_square, to_square, total_time)
-	
+
 	return true
 
 # Запуск таймера передвижения
@@ -141,24 +181,25 @@ func set_transport(transport: TransportType):
 	print("🚗 Транспорт изменён: " + str(transport))
 
 # Получить время на передвижение
-func calculate_travel_time(from_square: String, to_square: String, transport: TransportType = TransportType.WALK) -> int:
+func calculate_travel_time(from_square: String, to_square: String, player_data: Dictionary, transport: TransportType = TransportType.WALK) -> int:
 	if not grid_system:
 		return 0
-	
+
 	var distance = grid_system.get_distance(from_square, to_square)
 	if distance < 0:
 		return 0
-	
-	var time_per_square = transport_time[transport]
+
+	# ✅ ОБНОВЛЕНО: Используем новую функцию с учётом машины и DRV
+	var time_per_square = get_time_per_square_with_skill(player_data, transport)
 	var total_time = distance * time_per_square
-	
+
 	# Бонус/штраф за район
 	var from_district = grid_system.get_square_district(from_square)
 	var to_district = grid_system.get_square_district(to_square)
-	
+
 	if from_district != to_district:
 		total_time = int(total_time * 1.3)
-	
+
 	return total_time
 
 # Проверка, движется ли сейчас
@@ -177,6 +218,11 @@ func get_transport_name(transport: TransportType) -> String:
 		_:
 			return "Неизвестно"
 
-# Получить время на квадрат
+# Получить время на квадрат (старый метод - для обратной совместимости)
 func get_time_per_square(transport: TransportType) -> int:
-	return transport_time[transport]
+	if transport == TransportType.WALK:
+		return BASE_WALK_TIME
+	elif transport == TransportType.CAR_LEVEL1:
+		return 10  # Приблизительно для старых вызовов
+	else:
+		return 5  # CAR_LEVEL2

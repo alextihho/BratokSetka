@@ -68,7 +68,7 @@ func show_main_menu(main_node: Node):
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	menu_layer.add_child(title)
 	
-	var options = ["Продолжить", "Сохранить игру", "Загрузить игру", "Квесты", "Инвентарь", "Статистика", "Тест бой", "Выход"]
+	var options = ["Продолжить", "Сохранить игру", "Загрузить игру", "Квесты", "Инвентарь", "Статистика", "Читы", "Тест бой", "Выход"]
 	var y_pos = 320
 	
 	for option in options:
@@ -147,7 +147,12 @@ func handle_menu_option(option: String, main_node: Node):
 			if menu_layer:
 				menu_layer.queue_free()
 			show_stats_window(main_node)
-		
+
+		"Читы":
+			if menu_layer:
+				menu_layer.queue_free()
+			show_cheats_menu(main_node)
+
 		"Тест бой":
 			if menu_layer:
 				menu_layer.queue_free()
@@ -280,6 +285,172 @@ func show_stats_window(main_node: Node):
 	close_btn.pressed.connect(func(): stats_popup.queue_free())
 	
 	stats_popup.add_child(close_btn)
+
+# ===== МЕНЮ ЧИТОВ =====
+func show_cheats_menu(main_node: Node):
+	var cheats_popup = CanvasLayer.new()
+	cheats_popup.name = "CheatsPopup"
+	cheats_popup.layer = 200
+	main_node.add_child(cheats_popup)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	cheats_popup.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(680, 1100)
+	bg.position = Vector2(20, 90)
+	bg.color = Color(0.1, 0.05, 0.15, 0.98)
+	cheats_popup.add_child(bg)
+
+	var title = Label.new()
+	title.text = "🎮 ЧИТЫ"
+	title.position = Vector2(290, 110)
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color(1.0, 0.3, 1.0, 1.0))
+	cheats_popup.add_child(title)
+
+	var y_pos = 180
+
+	# === ДЕНЬГИ ===
+	var money_title = Label.new()
+	money_title.text = "💰 ДЕНЬГИ"
+	money_title.position = Vector2(40, y_pos)
+	money_title.add_theme_font_size_override("font_size", 24)
+	money_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+	cheats_popup.add_child(money_title)
+	y_pos += 40
+
+	var money_amounts = [1000, 5000, 10000]
+	for amount in money_amounts:
+		var btn = create_cheat_button("+%d руб." % amount, Vector2(40, y_pos), Vector2(200, 50))
+		btn.pressed.connect(func(): cheat_add_money(main_node, amount))
+		cheats_popup.add_child(btn)
+		y_pos += 60
+
+	y_pos += 20
+
+	# === ЗДОРОВЬЕ ===
+	var health_title = Label.new()
+	health_title.text = "❤️ ЗДОРОВЬЕ"
+	health_title.position = Vector2(40, y_pos)
+	health_title.add_theme_font_size_override("font_size", 24)
+	health_title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	cheats_popup.add_child(health_title)
+	y_pos += 40
+
+	var heal_btn = create_cheat_button("Полное исцеление", Vector2(40, y_pos), Vector2(200, 50))
+	heal_btn.pressed.connect(func(): cheat_heal(main_node))
+	cheats_popup.add_child(heal_btn)
+	y_pos += 80
+
+	# === НАВЫКИ ===
+	var skills_title = Label.new()
+	skills_title.text = "📊 НАВЫКИ"
+	skills_title.position = Vector2(40, y_pos)
+	skills_title.add_theme_font_size_override("font_size", 24)
+	skills_title.add_theme_color_override("font_color", Color(0.3, 1.0, 0.8, 1.0))
+	cheats_popup.add_child(skills_title)
+	y_pos += 40
+
+	# Список навыков
+	var skills = ["STR", "AGI", "INT", "CHA", "STEALTH", "DRV"]
+	var skill_names = {
+		"STR": "Сила",
+		"AGI": "Ловкость",
+		"INT": "Интеллект",
+		"CHA": "Харизма",
+		"STEALTH": "Скрытность",
+		"DRV": "Вождение"
+	}
+
+	for skill in skills:
+		var skill_label = Label.new()
+		skill_label.text = skill_names[skill] + " (%s)" % skill
+		skill_label.position = Vector2(40, y_pos)
+		skill_label.add_theme_font_size_override("font_size", 16)
+		skill_label.add_theme_color_override("font_color", Color.WHITE)
+		cheats_popup.add_child(skill_label)
+
+		var levels = [1, 5, 10]
+		var x_offset = 250
+		for level in levels:
+			var skill_btn = create_cheat_button("+%d" % level, Vector2(x_offset, y_pos - 5), Vector2(60, 40))
+			var s = skill
+			var l = level
+			skill_btn.pressed.connect(func(): cheat_add_skill(main_node, s, l))
+			cheats_popup.add_child(skill_btn)
+			x_offset += 70
+
+		y_pos += 50
+
+	# Кнопка закрытия
+	var close_btn = Button.new()
+	close_btn.custom_minimum_size = Vector2(640, 50)
+	close_btn.position = Vector2(40, 1100)
+	close_btn.text = "ЗАКРЫТЬ"
+
+	var style_close = StyleBoxFlat.new()
+	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	close_btn.add_theme_stylebox_override("normal", style_close)
+
+	close_btn.add_theme_font_size_override("font_size", 20)
+	close_btn.pressed.connect(func(): cheats_popup.queue_free())
+
+	cheats_popup.add_child(close_btn)
+
+# Создание кнопки чита
+func create_cheat_button(text: String, pos: Vector2, size: Vector2) -> Button:
+	var btn = Button.new()
+	btn.custom_minimum_size = size
+	btn.position = pos
+	btn.text = text
+
+	var style_normal = StyleBoxFlat.new()
+	style_normal.bg_color = Color(0.3, 0.2, 0.5, 1.0)
+	btn.add_theme_stylebox_override("normal", style_normal)
+
+	var style_hover = StyleBoxFlat.new()
+	style_hover.bg_color = Color(0.4, 0.3, 0.6, 1.0)
+	btn.add_theme_stylebox_override("hover", style_hover)
+
+	btn.add_theme_font_size_override("font_size", 14)
+	btn.add_theme_color_override("font_color", Color.WHITE)
+
+	return btn
+
+# === ФУНКЦИИ ЧИТОВ ===
+
+func cheat_add_money(main_node: Node, amount: int):
+	main_node.player_data["balance"] += amount
+	main_node.update_ui()
+	main_node.show_message("💰 +%d рублей (ЧИТ)" % amount)
+	print("💰 ЧИТ: Добавлено %d рублей" % amount)
+
+func cheat_heal(main_node: Node):
+	main_node.player_data["health"] = 100
+	main_node.update_ui()
+	main_node.show_message("❤️ Полное исцеление (ЧИТ)")
+	print("❤️ ЧИТ: Полное исцеление")
+
+func cheat_add_skill(main_node: Node, skill: String, levels: int):
+	if not player_stats:
+		player_stats = get_node_or_null("/root/PlayerStats")
+
+	if not player_stats:
+		main_node.show_message("❌ PlayerStats не найден!")
+		return
+
+	# Добавляем уровни
+	for i in range(levels):
+		player_stats.level_up_stat(skill)
+
+	var current_level = player_stats.get_stat(skill)
+	main_node.show_message("📊 %s +%d (текущий: %d) (ЧИТ)" % [skill, levels, current_level])
+	print("📊 ЧИТ: %s +%d уровней" % [skill, levels])
+
 func _ready():
 	gang_manager = get_node("/root/GangManager")
 	quest_system = get_node_or_null("/root/QuestSystem")
