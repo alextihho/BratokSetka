@@ -80,6 +80,24 @@ func create_ui():
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	add_child(title)
 
+	# ✅ НОВОЕ: HP машины для ГГ
+	if current_member_index == 0 and player_data.get("car"):
+		var car_hp_label = Label.new()
+		var car_condition = player_data.get("car_condition", 100)
+		car_hp_label.text = "🚗 Машина: %d%% HP" % int(car_condition)
+		car_hp_label.position = Vector2(250, 190)
+		car_hp_label.add_theme_font_size_override("font_size", 16)
+
+		# Цвет в зависимости от состояния
+		if car_condition >= 70:
+			car_hp_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
+		elif car_condition >= 40:
+			car_hp_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
+		else:
+			car_hp_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+
+		add_child(car_hp_label)
+
 	# ✅ НОВОЕ: ScrollContainer для контента инвентаря
 	var scroll_container = ScrollContainer.new()
 	scroll_container.custom_minimum_size = Vector2(700, 940)  # Высота до кнопки закрытия
