@@ -13,7 +13,7 @@ var base_stats = {
 	"INT": 3,         # Интеллект - обучение
 	"ELEC": 1,        # Электроника - взлом
 	"PICK": 1,        # Взлом замков
-	"Харизма": 2,     # ✅ ХАРИЗМА (вместо CHA) - переговоры, УА
+	"CHA": 2,         # ✅ ХАРИЗМА - переговоры, убеждение
 	"DRV": 2,         # Вождение
 	"STEALTH": 2      # Скрытность
 }
@@ -27,7 +27,7 @@ var stat_experience = {
 	"INT": 0,
 	"ELEC": 0,
 	"PICK": 0,
-	"Харизма": 0,
+	"CHA": 0,
 	"DRV": 0,
 	"STEALTH": 0
 }
@@ -86,7 +86,7 @@ func on_lockpick_attempt(success: bool):
 	add_stat_xp("PICK", 15 if success else 3)
 
 func on_persuasion_attempt(success: bool):
-	add_stat_xp("Харизма", 12 if success else 3)
+	add_stat_xp("CHA", 12 if success else 3)
 
 func on_driving(distance: float):
 	var xp = floor(distance / 10.0)
