@@ -670,31 +670,42 @@ func show_character_info(character_data: Dictionary, is_player_team: bool):
 	var info_window = CanvasLayer.new()
 	info_window.layer = 300
 	add_child(info_window)
-	
+
 	var bg = ColorRect.new()
 	bg.size = Vector2(600, 800)
 	bg.position = Vector2(60, 200)
 	bg.color = Color(0.1, 0.1, 0.1, 0.95)
 	info_window.add_child(bg)
-	
+
 	var title = Label.new()
 	title.text = "📊 Информация: " + character_data["name"]
 	title.position = Vector2(200, 220)
 	title.add_theme_font_size_override("font_size", 24)
 	title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	info_window.add_child(title)
-	
-	var stats_text = "❤️ HP: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
-	stats_text += "⚔️ Урон: %d\n" % character_data["damage"]
-	stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
-	stats_text += "🎯 Меткость: %.1f\n" % character_data["accuracy"]
-	stats_text += "💪 Мораль: %d\n" % character_data["morale"]
-	stats_text += "🔫 Оружие: %s\n" % character_data.get("weapon", "Кулаки")
-	
+
+	var stats_text = ""
+
+	# ✅ НОВОЕ: Разные характеристики для машины и человека
+	if character_data.get("is_car", false):
+		# МАШИНА - показываем специфичные характеристики
+		stats_text += "🛞 Состояние: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
+		stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
+		stats_text += "⚡ Скорость: %d\n" % character_data.get("speed", 50)
+		stats_text += "⚙️ Стабильность: %d\n" % character_data.get("stability", 50)
+	else:
+		# ЧЕЛОВЕК - обычные характеристики
+		stats_text += "❤️ HP: %d/%d\n" % [character_data["hp"], character_data.get("max_hp", 100)]
+		stats_text += "⚔️ Урон: %d\n" % character_data["damage"]
+		stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
+		stats_text += "🎯 Меткость: %.1f\n" % character_data["accuracy"]
+		stats_text += "💪 Мораль: %d\n" % character_data["morale"]
+		stats_text += "🔫 Оружие: %s\n" % character_data.get("weapon", "Кулаки")
+
 	var status_text = battle_logic.get_status_text(character_data)
 	if status_text != "":
 		stats_text += "📋 Статусы: %s\n" % status_text
-	
+
 	var stats_label = Label.new()
 	stats_label.text = stats_text
 	stats_label.position = Vector2(80, 280)

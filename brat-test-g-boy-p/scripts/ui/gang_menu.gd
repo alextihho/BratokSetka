@@ -509,6 +509,16 @@ func show_stats_window(member_index: int):
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	stats_popup.add_child(title)
 
+	# ✅ ScrollContainer для статистики
+	var scroll_container = ScrollContainer.new()
+	scroll_container.custom_minimum_size = Vector2(640, 820)
+	scroll_container.position = Vector2(40, 210)
+	scroll_container.size = Vector2(640, 820)
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_container.follow_focus = true
+	stats_popup.add_child(scroll_container)
+
 	var stats_text = ""
 
 	# ✅ Для главного игрока (индекс 0) - показываем характеристики
@@ -536,18 +546,19 @@ func show_stats_window(member_index: int):
 	stats_text += "🚗 Угонов: %d\n" % member["stats"]["carjackings"]
 	stats_text += "🔓 Взломов: %d\n\n" % member["stats"]["lockpicks"]
 
-	stats_text += "═══════════════════════\n"
-	stats_text += "👥 БАНДА\n"
-	stats_text += "═══════════════════════\n\n"
-
-	stats_text += "💔 Потеряно бойцов: %d\n" % member["stats"]["lost_members"]
+	# ✅ "Потеряно бойцов" только для ГГ (индекс 0)
+	if member_index == 0:
+		stats_text += "═══════════════════════\n"
+		stats_text += "👥 БАНДА\n"
+		stats_text += "═══════════════════════\n\n"
+		stats_text += "💔 Потеряно бойцов: %d\n" % member["stats"]["lost_members"]
 
 	var label = Label.new()
 	label.text = stats_text
-	label.position = Vector2(40, 215)
+	label.position = Vector2(5, 5)
 	label.add_theme_font_size_override("font_size", 17)
 	label.add_theme_color_override("font_color", Color.WHITE)
-	stats_popup.add_child(label)
+	scroll_container.add_child(label)
 
 	var close_btn = Button.new()
 	close_btn.custom_minimum_size = Vector2(640, 50)

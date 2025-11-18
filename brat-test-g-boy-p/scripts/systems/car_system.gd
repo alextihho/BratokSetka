@@ -435,7 +435,7 @@ func show_car_selection_menu(main_node: Node, player_data: Dictionary):
 	close_btn.add_theme_font_size_override("font_size", 20)
 	close_btn.pressed.connect(func():
 		selection_menu.queue_free()
-		show_car_dealership_menu(main_node, player_data)
+		# ✅ ИСПРАВЛЕНО: НЕ открываем автосалон после выбора водителя
 	)
 	selection_menu.add_child(close_btn)
 
