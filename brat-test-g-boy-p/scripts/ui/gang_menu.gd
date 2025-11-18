@@ -5,14 +5,16 @@ signal member_inventory_clicked(member_index: int)
 signal member_activated(member_index: int, is_active: bool)
 
 var gang_members = []
+var player_data: Dictionary = {}  # ✅ НОВОЕ: Данные игрока
 var gang_generator
 
 func _ready():
 	layer = 200
 	gang_generator = get_node("/root/GangMemberGenerator")
 
-func setup(members):
+func setup(members, p_data: Dictionary = {}):  # ✅ НОВОЕ: Принимаем player_data
 	gang_members = members
+	player_data = p_data  # ✅ НОВОЕ
 	
 	# ✅ ВАЖНО: Инициализируем is_active для всех членов
 	for i in range(gang_members.size()):
@@ -78,51 +80,68 @@ func create_ui():
 	hire_btn.add_theme_font_size_override("font_size", 16)
 	hire_btn.pressed.connect(func(): show_hire_menu())
 	add_child(hire_btn)
-	
-	var member_y = 240
+
+	# ✅ НОВОЕ: ScrollContainer для списка бандитов
+	var scroll_container = ScrollContainer.new()
+	scroll_container.custom_minimum_size = Vector2(700, 820)  # ✅ Высота для ГГ + 4 бандита
+	scroll_container.position = Vector2(10, 240)
+	scroll_container.size = Vector2(700, 820)
+	add_child(scroll_container)
+
+	# ✅ VBoxContainer для автоматической расстановки карточек
+	var members_container = VBoxContainer.new()
+	members_container.name = "MembersContainer"
+	scroll_container.add_child(members_container)
+
 	for i in range(gang_members.size()):
 		var member = gang_members[i]
 		var is_active = member.get("is_active", false)
 		var is_main = (i == 0)
-		
+
+		# ✅ НОВОЕ: Карточка как Control с фиксированным размером
+		var card_container = Control.new()
+		card_container.custom_minimum_size = Vector2(680, 170)
+		card_container.name = "Card_" + str(i)
+		members_container.add_child(card_container)
+
 		# Цвет фона зависит от активности
 		var bg_color = Color(0.2, 0.2, 0.25, 1.0)
 		if is_active:
 			bg_color = Color(0.2, 0.3, 0.25, 1.0)  # Зеленоватый для активных
-		
+
 		var member_bg = ColorRect.new()
 		member_bg.size = Vector2(680, 150)
-		member_bg.position = Vector2(20, member_y)
+		member_bg.position = Vector2(0, 0)  # ✅ Относительно card_container
 		member_bg.color = bg_color
 		member_bg.name = "MemberCard_" + str(i)
-		add_child(member_bg)
+		card_container.add_child(member_bg)
 		
 		# ✅ КНОПКА АКТИВАЦИИ (только для НЕ главного игрока)
 		if not is_main:
 			var activate_btn = Button.new()
 			activate_btn.custom_minimum_size = Vector2(50, 50)
-			activate_btn.position = Vector2(30, member_y + 50)
+			activate_btn.position = Vector2(10, 50)  # ✅ Относительно карточки
 			activate_btn.text = "✓" if is_active else "+"
 			activate_btn.name = "ActivateBtn_" + str(i)
-			
+
 			var style_activate = StyleBoxFlat.new()
 			if is_active:
 				style_activate.bg_color = Color(0.2, 0.7, 0.2, 1.0)  # Зеленая - активирован
 			else:
 				style_activate.bg_color = Color(0.5, 0.5, 0.5, 1.0)  # Серая - не активирован
 			activate_btn.add_theme_stylebox_override("normal", style_activate)
-			
+
 			var style_activate_hover = StyleBoxFlat.new()
 			style_activate_hover.bg_color = style_activate.bg_color * 1.2
 			activate_btn.add_theme_stylebox_override("hover", style_activate_hover)
-			
+
 			activate_btn.add_theme_font_size_override("font_size", 28)
-			
+
 			var member_idx = i
 			activate_btn.pressed.connect(func():
 				toggle_member_activation(member_idx)
 			)
-			add_child(activate_btn)
+			card_container.add_child(activate_btn)  # ✅ В карточку!
 		
 		var member_name = Label.new()
 		member_name.text = member["name"]
@@ -130,33 +149,33 @@ func create_ui():
 			member_name.text += " (главный)"
 		elif is_active:
 			member_name.text += " ✓"
-		member_name.position = Vector2(90 if not is_main else 30, member_y + 10)
+		member_name.position = Vector2(70 if not is_main else 10, 10)  # ✅ Относительно карточки
 		member_name.add_theme_font_size_override("font_size", 22)
 		member_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
-		add_child(member_name)
-		
+		card_container.add_child(member_name)  # ✅ В карточку!
+
 		if member.has("background"):
 			var bg_label = Label.new()
 			bg_label.text = member["background"]
-			bg_label.position = Vector2(90 if not is_main else 30, member_y + 35)
+			bg_label.position = Vector2(70 if not is_main else 10, 35)  # ✅ Относительно карточки
 			bg_label.add_theme_font_size_override("font_size", 14)
 			bg_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
-			add_child(bg_label)
-		
+			card_container.add_child(bg_label)  # ✅ В карточку!
+
 		var member_hp = Label.new()
 		member_hp.text = "❤ HP: " + str(member.get("hp", member.get("health", 100)))
-		member_hp.position = Vector2(90 if not is_main else 30, member_y + 60)
+		member_hp.position = Vector2(70 if not is_main else 10, 60)  # ✅ Относительно карточки
 		member_hp.add_theme_font_size_override("font_size", 16)
 		member_hp.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1.0))
-		add_child(member_hp)
-		
+		card_container.add_child(member_hp)  # ✅ В карточку!
+
 		var member_str = Label.new()
 		member_str.text = "💪 Сила: " + str(member.get("damage", member.get("strength", 10)))
-		member_str.position = Vector2(90 if not is_main else 30, member_y + 85)
+		member_str.position = Vector2(70 if not is_main else 10, 85)  # ✅ Относительно карточки
 		member_str.add_theme_font_size_override("font_size", 16)
 		member_str.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
-		add_child(member_str)
-		
+		card_container.add_child(member_str)  # ✅ В карточку!
+
 		var player_stats = get_node("/root/PlayerStats")
 		if player_stats and i == 0:
 			var quick_stats = Label.new()
@@ -165,56 +184,54 @@ func create_ui():
 				player_stats.equipment_bonuses["defense"],
 				player_stats.calculate_evasion()
 			]
-			quick_stats.position = Vector2(30, member_y + 110)
+			quick_stats.position = Vector2(10, 110)  # ✅ Относительно карточки
 			quick_stats.add_theme_font_size_override("font_size", 14)
 			quick_stats.add_theme_color_override("font_color", Color(0.7, 0.9, 0.7, 1.0))
-			add_child(quick_stats)
-		
+			card_container.add_child(quick_stats)  # ✅ В карточку!
+
 		var inv_btn = Button.new()
 		inv_btn.custom_minimum_size = Vector2(180, 45)
-		inv_btn.position = Vector2(500, member_y + 25)
+		inv_btn.position = Vector2(480, 25)  # ✅ Относительно карточки
 		inv_btn.text = "ИНВЕНТАРЬ"
 		inv_btn.name = "InvBtn_" + str(i)
-		
+
 		var style_inv = StyleBoxFlat.new()
 		style_inv.bg_color = Color(0.3, 0.5, 0.3, 1.0)
 		inv_btn.add_theme_stylebox_override("normal", style_inv)
-		
+
 		var style_inv_hover = StyleBoxFlat.new()
 		style_inv_hover.bg_color = Color(0.4, 0.6, 0.4, 1.0)
 		inv_btn.add_theme_stylebox_override("hover", style_inv_hover)
-		
+
 		inv_btn.add_theme_font_size_override("font_size", 18)
 		inv_btn.add_theme_color_override("font_color", Color.WHITE)
-		
+
 		var member_idx = i
 		inv_btn.pressed.connect(func():
 			member_inventory_clicked.emit(member_idx)
 			queue_free()
 		)
-		add_child(inv_btn)
-		
+		card_container.add_child(inv_btn)  # ✅ В карточку!
+
 		var stats_btn = Button.new()
 		stats_btn.custom_minimum_size = Vector2(180, 45)
-		stats_btn.position = Vector2(500, member_y + 80)
+		stats_btn.position = Vector2(480, 80)  # ✅ Относительно карточки
 		stats_btn.text = "📊 СТАТЫ"
 		stats_btn.name = "StatsBtn_" + str(i)
-		
+
 		var style_stats = StyleBoxFlat.new()
 		style_stats.bg_color = Color(0.2, 0.3, 0.5, 1.0)
 		stats_btn.add_theme_stylebox_override("normal", style_stats)
-		
+
 		var style_stats_hover = StyleBoxFlat.new()
 		style_stats_hover.bg_color = Color(0.3, 0.4, 0.6, 1.0)
 		stats_btn.add_theme_stylebox_override("hover", style_stats_hover)
-		
+
 		stats_btn.add_theme_font_size_override("font_size", 18)
 		stats_btn.add_theme_color_override("font_color", Color.WHITE)
-		
+
 		stats_btn.pressed.connect(func(): show_stats_window())
-		add_child(stats_btn)
-		
-		member_y += 170
+		card_container.add_child(stats_btn)  # ✅ В карточку!
 	
 	var close_btn = Button.new()
 	close_btn.custom_minimum_size = Vector2(680, 50)
@@ -240,27 +257,49 @@ func create_ui():
 func toggle_member_activation(member_index: int):
 	if member_index == 0:
 		return  # Главный игрок всегда активен
-	
+
 	if member_index >= gang_members.size():
 		return
-	
+
 	var member = gang_members[member_index]
 	var is_active = member.get("is_active", false)
-	
+
+	var main_node = get_parent()
+
+	# ✅ НОВОЕ: Если пытаемся АКТИВИРОВАТЬ, проверяем лимит машины
+	if not is_active:
+		# Считаем текущих активных
+		var active_count = 0
+		for m in gang_members:
+			if m.get("is_active", false):
+				active_count += 1
+
+		# ✅ НОВОЕ: Проверяем лимит машины
+		if player_data.get("in_car", false) and player_data.get("car"):
+			var car_system = get_node_or_null("/root/CarSystem")
+			if car_system and car_system.cars_db.has(player_data["car"]):
+				var car_data = car_system.cars_db[player_data["car"]]
+				var max_seats = car_data.get("seats", 2)
+
+				# Проверяем: если активных уже максимум
+				if active_count >= max_seats:
+					if main_node:
+						main_node.show_message("❌ В машине нет мест! Вместимость: %d/%d" % [active_count, max_seats])
+					return  # ✅ БЛОКИРУЕМ активацию!
+
 	# Переключаем статус
 	member["is_active"] = not is_active
-	
-	var main_node = get_parent()
+
 	if main_node:
 		if member["is_active"]:
 			main_node.show_message("✅ %s добавлен в активную банду" % member["name"])
 		else:
 			main_node.show_message("❌ %s убран из активной банды" % member["name"])
-	
+
 	# Обновляем UI
 	member_activated.emit(member_index, member["is_active"])
 	queue_free()
-	
+
 	# Заново открываем меню банды
 	var gang_manager = get_node("/root/GangManager")
 	if gang_manager and main_node:
