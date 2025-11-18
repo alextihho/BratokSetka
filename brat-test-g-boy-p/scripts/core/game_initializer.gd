@@ -32,7 +32,9 @@ func load_autoload_systems(game_controller):
 
 	game_controller.gang_manager = get_node("/root/GangManager")
 
-	game_controller.save_manager = get_node("/root/SaveManager")
+	game_controller.save_manager = get_node_or_null("/root/SaveManager")
+	if not game_controller.save_manager:
+		push_error("❌ КРИТИЧНО: SaveManager не найден в autoload!")
 
 	game_controller.districts_system = get_node_or_null("/root/DistrictsSystem")
 

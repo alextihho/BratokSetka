@@ -118,8 +118,9 @@ func show_main_menu(main_node: Node):
 	menu_layer.add_child(close_btn)
 
 func handle_menu_option(option: String, main_node: Node):
+	print("🎮 === ОБРАБОТКА МЕНЮ: %s ===" % option)
 	var menu_layer = main_node.get_node_or_null("MainMenuLayer")
-	
+
 	match option:
 		"Продолжить":
 			if menu_layer:
@@ -156,42 +157,73 @@ func handle_menu_option(option: String, main_node: Node):
 			main_node.get_tree().quit()
 
 func save_game(main_node: Node):
+	print("💾 === НАЧАЛО СОХРАНЕНИЯ ===")
+
 	if not save_manager:
+		save_manager = get_node_or_null("/root/SaveManager")
+		print("   Получаем SaveManager: %s" % ("✅ OK" if save_manager else "❌ NULL"))
+
+	if not save_manager:
+		print("❌ SaveManager не найден!")
 		main_node.show_message("❌ Система сохранений недоступна!")
 		return
-	
+
+	print("   Сохраняем данные игрока...")
+	print("   - Деньги: %d" % main_node.player_data.get("balance", 0))
+	print("   - HP: %d" % main_node.player_data.get("health", 100))
+	print("   - Банда: %d человек" % main_node.gang_members.size())
+
 	# ✅ ВАЖНО: Берём актуальные данные из main_node
 	var success = save_manager.save_game(
 		main_node.player_data,
 		main_node.gang_members
 	)
-	
+
+	print("   Результат: %s" % ("✅ SUCCESS" if success else "❌ FAILED"))
+
 	if success:
 		main_node.show_message("💾 Игра сохранена!")
 	else:
 		main_node.show_message("❌ Ошибка сохранения!")
 
+	print("💾 === КОНЕЦ СОХРАНЕНИЯ ===")
+
 func load_game(main_node: Node):
+	print("📂 === НАЧАЛО ЗАГРУЗКИ ===")
+
 	if not save_manager:
+		save_manager = get_node_or_null("/root/SaveManager")
+		print("   Получаем SaveManager: %s" % ("✅ OK" if save_manager else "❌ NULL"))
+
+	if not save_manager:
+		print("❌ SaveManager не найден!")
 		main_node.show_message("❌ Система сохранений недоступна!")
 		return
-	
+
+	print("   Проверяем наличие сохранения...")
 	if not save_manager.has_save():
+		print("⚠️ Файл сохранения не найден")
 		main_node.show_message("⚠️ Нет сохранённой игры!")
 		return
-	
+
+	print("   ✅ Сохранение найдено, загружаем...")
 	var save_data = save_manager.load_game()
+
 	if save_data.is_empty():
+		print("❌ Сохранение пустое или повреждено")
 		main_node.show_message("❌ Ошибка загрузки!")
 		return
-	
+
+	print("   ✅ Данные загружены, восстанавливаем игру...")
 	main_node.load_game_from_data(save_data)
-	
+
 	main_node.show_message("✅ Игра загружена!")
-	
+
 	var menu_layer = main_node.get_node_or_null("MainMenuLayer")
 	if menu_layer:
 		menu_layer.queue_free()
+
+	print("📂 === КОНЕЦ ЗАГРУЗКИ ===")
 
 func show_stats_window(main_node: Node):
 	if not player_stats:
