@@ -112,9 +112,10 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(overlay)
 	
+	# ✅ УВЕЛИЧЕНО ОКНО ВНИЗ (высота 320 → 360)
 	var menu_bg = ColorRect.new()
-	menu_bg.size = Vector2(400, 320)
-	menu_bg.position = Vector2(160, 480)
+	menu_bg.size = Vector2(400, 360)
+	menu_bg.position = Vector2(160, 460)
 	menu_bg.color = Color(0.1, 0.1, 0.1, 0.95)
 	menu_bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	movement_menu.add_child(menu_bg)
@@ -124,23 +125,23 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 		title.text = "🏢 ПЕРЕЙТИ: " + building_name
 	else:
 		title.text = "🚶 ПЕРЕДВИЖЕНИЕ"
-	title.position = Vector2(200, 500)
+	title.position = Vector2(200, 480)
 	title.add_theme_font_size_override("font_size", 22)
 	title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	movement_menu.add_child(title)
-	
+
 	var info = Label.new()
 	info.text = "Расстояние: %d квадратов\nВремя: ~%d мин" % [distance, time_walk]
-	info.position = Vector2(240, 550)
+	info.position = Vector2(240, 530)
 	info.add_theme_font_size_override("font_size", 16)
 	info.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
 	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	movement_menu.add_child(info)
-	
+
 	var walk_btn = Button.new()
 	walk_btn.custom_minimum_size = Vector2(360, 60)
-	walk_btn.position = Vector2(180, 630)
+	walk_btn.position = Vector2(180, 610)
 	walk_btn.text = "🚶 ИДТИ (~%d мин)" % time_walk
 	walk_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	
@@ -162,7 +163,7 @@ func show_movement_menu(target_square: String, click_pos: Vector2, building_name
 	
 	var cancel_btn = Button.new()
 	cancel_btn.custom_minimum_size = Vector2(360, 60)
-	cancel_btn.position = Vector2(180, 710)
+	cancel_btn.position = Vector2(180, 730)
 	cancel_btn.text = "❌ ОТМЕНА"
 	cancel_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	

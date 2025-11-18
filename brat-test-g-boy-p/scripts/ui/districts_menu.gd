@@ -15,25 +15,25 @@ func setup():
 func create_ui():
 	for child in get_children():
 		child.queue_free()
-	
+
 	if not districts_system:
 		print("❌ DistrictsSystem не найдена!")
 		return
-	
+
 	var bg = ColorRect.new()
 	bg.size = Vector2(700, 1100)
 	bg.position = Vector2(10, 140)
 	bg.color = Color(0.05, 0.05, 0.05, 0.95)
 	bg.name = "DistrictsBG"
 	add_child(bg)
-	
+
 	var title = Label.new()
 	title.text = "🏙️ РАЙОНЫ ТВЕРИ"
 	title.position = Vector2(240, 160)
 	title.add_theme_font_size_override("font_size", 28)
 	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
 	add_child(title)
-	
+
 	# Общая информация
 	var total_income = districts_system.get_total_player_income()
 	var income_label = Label.new()
@@ -42,7 +42,7 @@ func create_ui():
 	income_label.add_theme_font_size_override("font_size", 18)
 	income_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
 	add_child(income_label)
-	
+
 	# Подсказка
 	var hint = Label.new()
 	hint.text = "💡 Увеличивайте влияние, посещая локации и побеждая в боях"
@@ -50,36 +50,160 @@ func create_ui():
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
 	add_child(hint)
-	
+
+	# ✅ НОВОЕ: ScrollContainer для районов
+	var scroll_container = ScrollContainer.new()
+	scroll_container.position = Vector2(10, 270)
+	scroll_container.size = Vector2(700, 780)  # Высота до кнопки закрытия
+	scroll_container.name = "DistrictsScroll"
+	add_child(scroll_container)
+
+	# VBoxContainer для автоматического размещения карточек районов
+	var vbox = VBoxContainer.new()
+	vbox.name = "DistrictsVBox"
+	vbox.add_theme_constant_override("separation", 10)
+	scroll_container.add_child(vbox)
+
 	# Список районов
 	var districts = districts_system.get_all_districts()
-	var y_pos = 280
-	
+
 	for district in districts:
-		create_district_card(district, y_pos)
-		y_pos += 180
-	
+		create_district_card_in_container(district, vbox)
+
 	# Кнопка закрытия
 	var close_btn = Button.new()
 	close_btn.custom_minimum_size = Vector2(680, 50)
 	close_btn.position = Vector2(20, 1070)
 	close_btn.text = "ЗАКРЫТЬ"
-	
+
 	var style_close = StyleBoxFlat.new()
 	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	close_btn.add_theme_stylebox_override("normal", style_close)
-	
+
 	var style_close_hover = StyleBoxFlat.new()
 	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
 	close_btn.add_theme_stylebox_override("hover", style_close_hover)
-	
+
 	close_btn.add_theme_font_size_override("font_size", 20)
 	close_btn.pressed.connect(func():
 		menu_closed.emit()
 		queue_free()
 	)
-	
+
 	add_child(close_btn)
+
+# ✅ НОВАЯ ФУНКЦИЯ: Создание карточки района в контейнере
+func create_district_card_in_container(district: Dictionary, container: VBoxContainer):
+	# Контейнер для карточки
+	var card_container = Control.new()
+	card_container.custom_minimum_size = Vector2(680, 160)
+	card_container.name = "DistrictCard_" + district["name"]
+	container.add_child(card_container)
+
+	# Фон карточки
+	var district_bg = ColorRect.new()
+	district_bg.size = Vector2(680, 160)
+	district_bg.position = Vector2(0, 0)
+	district_bg.color = district["color"] * 0.3
+	card_container.add_child(district_bg)
+
+	# Название района
+	var district_name = Label.new()
+	district_name.text = "📍 " + district["name"]
+	district_name.position = Vector2(10, 10)
+	district_name.add_theme_font_size_override("font_size", 22)
+	district_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
+	card_container.add_child(district_name)
+
+	# Владелец
+	var owner_label = Label.new()
+	var owner_color = Color(0.7, 0.7, 0.7, 1.0)
+	if district["owner"] == "Игрок":
+		owner_color = Color(0.3, 1.0, 0.3, 1.0)
+	elif district["owner"] != "Нейтральный":
+		owner_color = Color(1.0, 0.3, 0.3, 1.0)
+
+	owner_label.text = "Владелец: " + district["owner"]
+	owner_label.position = Vector2(10, 40)
+	owner_label.add_theme_font_size_override("font_size", 16)
+	owner_label.add_theme_color_override("font_color", owner_color)
+	card_container.add_child(owner_label)
+
+	# Влияние игрока
+	var player_influence = district["influence"].get("Игрок", 0)
+	var influence_label = Label.new()
+	influence_label.text = "Ваше влияние: " + str(player_influence) + "%"
+	influence_label.position = Vector2(10, 65)
+	influence_label.add_theme_font_size_override("font_size", 16)
+	influence_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
+	card_container.add_child(influence_label)
+
+	# Прогресс-бар влияния
+	create_progress_bar_in_card(player_influence, Vector2(10, 90), card_container)
+
+	# Доход
+	var income = districts_system.get_district_income(district["name"], "Игрок")
+	var income_text = Label.new()
+	income_text.text = "💵 Ваш доход: " + str(income) + " руб./день"
+	income_text.position = Vector2(10, 120)
+	income_text.add_theme_font_size_override("font_size", 14)
+	income_text.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7, 1.0))
+	card_container.add_child(income_text)
+
+	# Кнопка подробностей
+	var details_btn = Button.new()
+	details_btn.custom_minimum_size = Vector2(180, 45)
+	details_btn.position = Vector2(480, 100)
+	details_btn.text = "ПОДРОБНЕЕ"
+
+	var style_details = StyleBoxFlat.new()
+	style_details.bg_color = Color(0.3, 0.4, 0.5, 1.0)
+	details_btn.add_theme_stylebox_override("normal", style_details)
+
+	var style_details_hover = StyleBoxFlat.new()
+	style_details_hover.bg_color = Color(0.4, 0.5, 0.6, 1.0)
+	details_btn.add_theme_stylebox_override("hover", style_details_hover)
+
+	details_btn.add_theme_font_size_override("font_size", 16)
+
+	var district_name_str = district["name"]
+	details_btn.pressed.connect(func():
+		district_selected.emit(district_name_str)
+	)
+	card_container.add_child(details_btn)
+
+# Прогресс-бар внутри карточки
+func create_progress_bar_in_card(value: int, pos: Vector2, parent: Control):
+	# Фон прогресс-бара
+	var progress_bg = ColorRect.new()
+	progress_bg.size = Vector2(300, 20)
+	progress_bg.position = pos
+	progress_bg.color = Color(0.2, 0.2, 0.2, 1.0)
+	parent.add_child(progress_bg)
+
+	# Заполнение прогресс-бара
+	var progress_fill = ColorRect.new()
+	var fill_width = 300 * (value / 100.0)
+	progress_fill.size = Vector2(fill_width, 20)
+	progress_fill.position = pos
+
+	# Цвет зависит от уровня влияния
+	if value >= 50:
+		progress_fill.color = Color(0.3, 1.0, 0.3, 1.0)  # Зеленый - контроль
+	elif value >= 25:
+		progress_fill.color = Color(0.8, 0.8, 0.3, 1.0)  # Желтый - среднее влияние
+	else:
+		progress_fill.color = Color(1.0, 0.4, 0.4, 1.0)  # Красный - малое влияние
+
+	parent.add_child(progress_fill)
+
+	# Текст процента
+	var percent_label = Label.new()
+	percent_label.text = str(value) + "%"
+	percent_label.position = pos + Vector2(135, 2)
+	percent_label.add_theme_font_size_override("font_size", 14)
+	percent_label.add_theme_color_override("font_color", Color.BLACK)
+	parent.add_child(percent_label)
 
 func create_district_card(district: Dictionary, y_pos: int):
 	var district_bg = ColorRect.new()

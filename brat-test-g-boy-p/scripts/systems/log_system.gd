@@ -34,28 +34,28 @@ func create_log_ui():
 	
 	# ✅ Фон панели логов (темно-серый) - СПРАВА ВНИЗУ
 	var bg = ColorRect.new()
-	bg.size = Vector2(350, 500)  
+	bg.size = Vector2(350, 500)
 	bg.position = Vector2(360, 720)  # ✅ Поднято на 60px вверх
 	bg.color = Color(0.15, 0.15, 0.15, 0.95)
 	bg.name = "LogBackground"
-	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики по карте
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики по карте
 	log_panel.add_child(bg)
-	
+
 	# Заголовок
 	var title = Label.new()
 	title.text = "📜 ЛОГИ СОБЫТИЙ"
 	title.position = Vector2(380, 730)  # ✅ Поднято на 60px
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9))
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики
+	title.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики
 	log_panel.add_child(title)
-	
+
 	# ScrollContainer для логов
 	var scroll = ScrollContainer.new()
 	scroll.position = Vector2(370, 760)  # ✅ Поднято на 60px
 	scroll.size = Vector2(330, 450)
 	scroll.name = "LogScroll"
-	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ НЕ блокирует клики по карте
+	scroll.mouse_filter = Control.MOUSE_FILTER_STOP  # ✅ БЛОКИРУЕТ клики по карте
 	log_panel.add_child(scroll)
 	
 	# VBoxContainer для логов

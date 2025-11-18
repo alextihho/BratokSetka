@@ -143,19 +143,51 @@ func create_ui():
 			bg_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
 			add_child(bg_label)
 		
+		# ✅ РАСШИРЕННЫЕ ХАРАКТЕРИСТИКИ НПС
 		var member_hp = Label.new()
 		member_hp.text = "❤ HP: " + str(member.get("hp", member.get("health", 100)))
-		member_hp.position = Vector2(90 if not is_main else 30, member_y + 60)
-		member_hp.add_theme_font_size_override("font_size", 16)
+		member_hp.position = Vector2(90 if not is_main else 30, member_y + 55)
+		member_hp.add_theme_font_size_override("font_size", 15)
 		member_hp.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4, 1.0))
 		add_child(member_hp)
-		
+
 		var member_str = Label.new()
-		member_str.text = "💪 Сила: " + str(member.get("damage", member.get("strength", 10)))
-		member_str.position = Vector2(90 if not is_main else 30, member_y + 85)
-		member_str.add_theme_font_size_override("font_size", 16)
+		member_str.text = "💪 Урон: " + str(member.get("damage", member.get("strength", 10)))
+		member_str.position = Vector2(90 if not is_main else 30, member_y + 75)
+		member_str.add_theme_font_size_override("font_size", 15)
 		member_str.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
 		add_child(member_str)
+
+		# ✅ Дополнительные характеристики
+		var member_def = Label.new()
+		member_def.text = "🛡 Защита: " + str(member.get("defense", 0))
+		member_def.position = Vector2(90 if not is_main else 30, member_y + 95)
+		member_def.add_theme_font_size_override("font_size", 15)
+		member_def.add_theme_color_override("font_color", Color(0.7, 0.9, 1.0, 1.0))
+		add_child(member_def)
+
+		var member_morale = Label.new()
+		member_morale.text = "😊 Мораль: " + str(member.get("morale", 80)) + "%"
+		member_morale.position = Vector2(300 if not is_main else 250, member_y + 55)
+		member_morale.add_theme_font_size_override("font_size", 15)
+		var morale_color = Color(0.3, 1.0, 0.3, 1.0) if member.get("morale", 80) >= 70 else Color(1.0, 0.7, 0.3, 1.0)
+		member_morale.add_theme_color_override("font_color", morale_color)
+		add_child(member_morale)
+
+		var member_weapon = Label.new()
+		member_weapon.text = "🔫 Оружие: " + str(member.get("weapon", "Кулаки"))
+		member_weapon.position = Vector2(300 if not is_main else 250, member_y + 75)
+		member_weapon.add_theme_font_size_override("font_size", 15)
+		member_weapon.add_theme_color_override("font_color", Color(0.9, 0.9, 0.7, 1.0))
+		add_child(member_weapon)
+
+		var member_accuracy = Label.new()
+		var accuracy_percent = int(member.get("accuracy", 0.65) * 100)
+		member_accuracy.text = "🎯 Точность: " + str(accuracy_percent) + "%"
+		member_accuracy.position = Vector2(300 if not is_main else 250, member_y + 95)
+		member_accuracy.add_theme_font_size_override("font_size", 15)
+		member_accuracy.add_theme_color_override("font_color", Color(0.8, 1.0, 0.8, 1.0))
+		add_child(member_accuracy)
 		
 		var player_stats = get_node("/root/PlayerStats")
 		if player_stats and i == 0:
