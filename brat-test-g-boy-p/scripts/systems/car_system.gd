@@ -137,12 +137,36 @@ func show_car_dealership_menu(main_node: Node, player_data: Dictionary):
 		show_repair_menu(main_node, player_data, dealership_menu)
 	)
 	dealership_menu.add_child(repair_btn)
-	
+
 	y_pos += 100
-	
+
+	# ✅ НОВОЕ: Кнопка "ВЫБРАТЬ ВОДИТЕЛЯ"
+	var driver_btn = Button.new()
+	driver_btn.custom_minimum_size = Vector2(660, 80)
+	driver_btn.position = Vector2(30, y_pos)
+	driver_btn.text = "👤 ВЫБРАТЬ ВОДИТЕЛЯ"
+	driver_btn.disabled = not player_data.get("car")
+	driver_btn.z_index = 10
+
+	var style_driver = StyleBoxFlat.new()
+	if driver_btn.disabled:
+		style_driver.bg_color = Color(0.3, 0.3, 0.3, 1.0)
+	else:
+		style_driver.bg_color = Color(0.4, 0.6, 0.4, 1.0)
+	driver_btn.add_theme_stylebox_override("normal", style_driver)
+
+	driver_btn.add_theme_font_size_override("font_size", 24)
+	driver_btn.pressed.connect(func():
+		dealership_menu.queue_free()
+		show_driver_selection_menu(main_node, player_data)
+	)
+	dealership_menu.add_child(driver_btn)
+
+	y_pos += 100
+
 	# Информационный блок
 	var info_bg = ColorRect.new()
-	info_bg.size = Vector2(660, 600)
+	info_bg.size = Vector2(660, 500)  # ✅ Немного уменьшили
 	info_bg.position = Vector2(30, y_pos)
 	info_bg.color = Color(0.1, 0.1, 0.2, 0.8)
 	info_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE  # ✅ ФИКС: Не блокируем клики
@@ -520,6 +544,204 @@ func use_car(player_data: Dictionary, distance: float = 10.0):
 	var wear = wear_rate * (distance / 10.0)
 	
 	player_data["car_condition"] = max(0, player_data.get("car_condition", 100) - wear)
+
+# ✅ НОВОЕ: Меню выбора водителя
+func show_driver_selection_menu(main_node: Node, player_data: Dictionary):
+	var driver_menu = CanvasLayer.new()
+	driver_menu.layer = 110
+	driver_menu.name = "DriverSelectionMenu"
+	main_node.add_child(driver_menu)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.85)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	driver_menu.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(680, 1100)
+	bg.position = Vector2(20, 90)
+	bg.color = Color(0.05, 0.05, 0.15, 0.98)
+	driver_menu.add_child(bg)
+
+	var title = Label.new()
+	title.text = "👤 ВЫБОР ВОДИТЕЛЯ"
+	title.position = Vector2(230, 110)
+	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_color_override("font_color", Color(0.3, 0.7, 1.0, 1.0))
+	driver_menu.add_child(title)
+
+	var car_name = "Машина"
+	if player_data.get("car"):
+		var car = cars_db.get(player_data["car"])
+		if car:
+			car_name = car["name"]
+
+	var subtitle = Label.new()
+	subtitle.text = "Выберите кто будет водить: " + car_name
+	subtitle.position = Vector2(150, 160)
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
+	driver_menu.add_child(subtitle)
+
+	var y_pos = 220
+
+	# ✅ ГГ (Главный Герой)
+	var player_card = ColorRect.new()
+	player_card.size = Vector2(640, 100)
+	player_card.position = Vector2(40, y_pos)
+	player_card.color = Color(0.15, 0.15, 0.25, 1.0)
+	driver_menu.add_child(player_card)
+
+	var player_name = Label.new()
+	player_name.text = "🎯 ВЫ (Главный герой)"
+	player_name.position = Vector2(60, y_pos + 15)
+	player_name.add_theme_font_size_override("font_size", 20)
+	player_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.5, 1.0))
+	driver_menu.add_child(player_name)
+
+	var player_drv = player_stats.get_stat("DRV") if player_stats else 0
+	var player_drv_label = Label.new()
+	player_drv_label.text = "🚗 Вождение: %d" % player_drv
+	player_drv_label.position = Vector2(60, y_pos + 45)
+	player_drv_label.add_theme_font_size_override("font_size", 16)
+	player_drv_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5, 1.0))
+	driver_menu.add_child(player_drv_label)
+
+	var player_current = player_data.get("current_driver") == -1  # -1 = ГГ
+	var player_btn = Button.new()
+	player_btn.custom_minimum_size = Vector2(160, 50)
+	player_btn.position = Vector2(500, y_pos + 25)
+	player_btn.text = "✓ ВОДИТЕЛЬ" if player_current else "ВЫБРАТЬ"
+	player_btn.disabled = player_current
+	player_btn.z_index = 10
+
+	var style_player = StyleBoxFlat.new()
+	style_player.bg_color = Color(0.3, 0.3, 0.3, 1.0) if player_current else Color(0.3, 0.6, 0.3, 1.0)
+	player_btn.add_theme_stylebox_override("normal", style_player)
+
+	player_btn.add_theme_font_size_override("font_size", 16)
+	player_btn.pressed.connect(func():
+		select_driver(main_node, player_data, -1, driver_menu)  # -1 = ГГ
+	)
+	driver_menu.add_child(player_btn)
+
+	y_pos += 120
+
+	# ✅ Члены банды
+	var gang_title = Label.new()
+	gang_title.text = "═══ БАНДА ═══"
+	gang_title.position = Vector2(280, y_pos)
+	gang_title.add_theme_font_size_override("font_size", 22)
+	gang_title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.3, 1.0))
+	driver_menu.add_child(gang_title)
+	y_pos += 50
+
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+
+	if gang_members.size() == 0:
+		var no_gang = Label.new()
+		no_gang.text = "⚠️ Нет членов банды"
+		no_gang.position = Vector2(250, y_pos + 20)
+		no_gang.add_theme_font_size_override("font_size", 18)
+		no_gang.add_theme_color_override("font_color", Color(1.0, 0.5, 0.3, 1.0))
+		driver_menu.add_child(no_gang)
+	else:
+		for i in range(gang_members.size()):
+			var member = gang_members[i]
+
+			var member_card = ColorRect.new()
+			member_card.size = Vector2(640, 100)
+			member_card.position = Vector2(40, y_pos)
+			member_card.color = Color(0.15, 0.15, 0.25, 1.0)
+			driver_menu.add_child(member_card)
+
+			var member_name_text = member.get("name", "Безымянный")
+			if not member.get("is_active", true):
+				member_name_text += " (неактивен)"
+
+			var member_name_label = Label.new()
+			member_name_label.text = member_name_text
+			member_name_label.position = Vector2(60, y_pos + 15)
+			member_name_label.add_theme_font_size_override("font_size", 18)
+			member_name_label.add_theme_color_override("font_color", Color.WHITE if member.get("is_active", true) else Color(0.5, 0.5, 0.5, 1.0))
+			driver_menu.add_child(member_name_label)
+
+			# Получаем DRV скилл члена банды
+			var member_drv = member.get("driving_skill", 0)
+			var member_drv_label = Label.new()
+			member_drv_label.text = "🚗 Вождение: %d" % member_drv
+			member_drv_label.position = Vector2(60, y_pos + 45)
+			member_drv_label.add_theme_font_size_override("font_size", 16)
+			member_drv_label.add_theme_color_override("font_color", Color(0.5, 1.0, 0.5, 1.0))
+			driver_menu.add_child(member_drv_label)
+
+			var is_current_driver = player_data.get("current_driver") == i
+			var member_btn = Button.new()
+			member_btn.custom_minimum_size = Vector2(160, 50)
+			member_btn.position = Vector2(500, y_pos + 25)
+			member_btn.text = "✓ ВОДИТЕЛЬ" if is_current_driver else "ВЫБРАТЬ"
+			member_btn.disabled = is_current_driver or not member.get("is_active", true)
+			member_btn.z_index = 10
+
+			var style_member = StyleBoxFlat.new()
+			if member_btn.disabled:
+				style_member.bg_color = Color(0.3, 0.3, 0.3, 1.0)
+			else:
+				style_member.bg_color = Color(0.3, 0.6, 0.3, 1.0)
+			member_btn.add_theme_stylebox_override("normal", style_member)
+
+			member_btn.add_theme_font_size_override("font_size", 16)
+			var member_index = i
+			member_btn.pressed.connect(func():
+				select_driver(main_node, player_data, member_index, driver_menu)
+			)
+			driver_menu.add_child(member_btn)
+
+			y_pos += 120
+
+			# Ограничение по высоте экрана
+			if y_pos > 1000:
+				break
+
+	# Кнопка закрытия
+	var close_btn = Button.new()
+	close_btn.custom_minimum_size = Vector2(640, 50)
+	close_btn.position = Vector2(40, 1100)
+	close_btn.text = "НАЗАД"
+	close_btn.z_index = 10
+
+	var style_close = StyleBoxFlat.new()
+	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	close_btn.add_theme_stylebox_override("normal", style_close)
+
+	close_btn.add_theme_font_size_override("font_size", 20)
+	close_btn.pressed.connect(func():
+		driver_menu.queue_free()
+		show_car_dealership_menu(main_node, player_data)
+	)
+	driver_menu.add_child(close_btn)
+
+# ✅ НОВОЕ: Выбрать водителя
+func select_driver(main_node: Node, player_data: Dictionary, driver_index: int, driver_menu: CanvasLayer):
+	player_data["current_driver"] = driver_index
+	player_data["car_equipped"] = true  # ✅ Машина теперь готова к использованию
+
+	var driver_name = "Вы"
+	if driver_index >= 0:
+		var gang_members = main_node.gang_members if "gang_members" in main_node else []
+		if driver_index < gang_members.size():
+			driver_name = gang_members[driver_index].get("name", "Безымянный")
+
+	main_node.show_message("✅ Водитель назначен: %s\n🚗 Машина готова к использованию!" % driver_name)
+
+	# ✅ НОВОЕ: Логируем назначение водителя
+	if log_system:
+		log_system.add_event_log("Машина готова! Теперь за рулём: %s." % driver_name)
+
+	driver_menu.queue_free()
+	await main_node.get_tree().create_timer(0.5).timeout
+	show_car_dealership_menu(main_node, player_data)
 
 # ✅ НОВОЕ: Получить количество мест в машине
 func get_car_seats(car_id: String) -> int:
