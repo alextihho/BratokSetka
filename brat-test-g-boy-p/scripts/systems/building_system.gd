@@ -537,6 +537,11 @@ func sell_item(item_name: String, player_data: Dictionary, main_node: Node):
 
 # ✅ НОВОЕ: Черный рынок
 func show_black_market(player_data: Dictionary, main_node: Node):
+	# ✅ ИСПРАВЛЕНО: Закрываем меню ларька
+	var larek_menu = main_node.get_node_or_null("BuildingMenu")
+	if larek_menu:
+		larek_menu.queue_free()
+
 	var market_menu = CanvasLayer.new()
 	market_menu.name = "BlackMarketMenu"
 	market_menu.layer = 210  # ✅ ВЫШЕ всего остального
