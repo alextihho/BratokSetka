@@ -458,6 +458,8 @@ func load_game_from_data(save_data: Dictionary):
 		show_message("❌ Нет данных для загрузки!")
 		return
 
+	print("📂 Загрузка игры...")
+
 	if save_data.has("player"):
 		var player = save_data["player"]
 		player_data["balance"] = player.get("balance", 0)
@@ -473,24 +475,44 @@ func load_game_from_data(save_data: Dictionary):
 		player_data["car_equipped"] = player.get("car_equipped", false)
 		player_data["current_driver"] = player.get("current_driver", null)
 
+		# ✅ ВАЖНО: Обновляем позицию игрока на сетке
 		if player.has("current_square"):
 			player_data["current_square"] = player["current_square"]
+			if grid_system:
+				grid_system.set_player_square(player_data["current_square"])
+				print("   🚶 Позиция игрока: %s" % player_data["current_square"])
 
 	if save_data.has("gang"):
 		gang_members = save_data["gang"].duplicate(true)
 		for i in range(gang_members.size()):
 			if not gang_members[i].has("is_active"):
 				gang_members[i]["is_active"] = (i == 0)
+		print("   👥 Банда: %d человек" % gang_members.size())
 
+	# ✅ Восстанавливаем данные из всех систем
 	if save_manager:
 		if save_data.has("quests"):
 			save_manager.restore_quest_data(save_data["quests"])
 		if save_data.has("districts"):
 			save_manager.restore_districts_data(save_data["districts"])
+		if save_data.has("time"):
+			save_manager.restore_time_data(save_data["time"])
+		if save_data.has("stats"):
+			save_manager.restore_stats_data(save_data["stats"])
+		if save_data.has("police"):
+			save_manager.restore_police_data(save_data["police"])
 
+	# ✅ ВАЖНО: Обновляем UI и время
 	update_ui()
+	update_time_ui()
+
+	# ✅ Отключаем флаг первого боя если он завершён
+	if player_data.get("first_battle_completed", false):
+		first_battle_started = true
+		print("   ⚔️ Первый бой уже пройден - пропускаем")
+
 	show_message("✅ Игра загружена!")
-	print("📂 Загружено - первый бой: %s" % player_data["first_battle_completed"])
+	print("✅ Загрузка завершена")
 
 func get_save_data() -> Dictionary:
 	return {
