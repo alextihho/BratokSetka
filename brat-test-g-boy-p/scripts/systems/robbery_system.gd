@@ -580,12 +580,20 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 	# ✅ Применяем модификаторы из модуля
 	EscapeStage.apply_modifiers(escape_method, robbery_state)
 
-	# ✅ ФИКС: Сначала закрыть меню, потом завершить ограбление
+	# ✅ ФИКС: Закрываем меню побега
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
 	if menu:
+		print("🗑️ Закрываем RobberyStageMenu (этап побега)")
 		menu.queue_free()
 
+	# Проверяем все CanvasLayer на случай если меню там
+	for child in main_node.get_children():
+		if child is CanvasLayer and child.name == "RobberyStageMenu":
+			print("🗑️ Принудительно удаляем CanvasLayer: RobberyStageMenu")
+			child.queue_free()
+
 	# Ждем следующий кадр чтобы меню точно закрылось
+	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 
 	# Завершить ограбление

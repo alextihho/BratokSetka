@@ -393,10 +393,15 @@ func connect_signals(game_controller):
 
 		print("   - time_of_day_changed -> _on_time_of_day_changed")
 
+		# ✅ НОВОЕ: Подключаем снижение УА к смене дня
+		if game_controller.police_system:
+			game_controller.time_system.day_changed.connect(game_controller.police_system.on_day_changed)
+			print("   - day_changed -> police_system.on_day_changed (снижение УА)")
+
 	else:
 
 		push_error("❌ TimeSystem не найден! Сигналы не подключены!")
 
- 
+
 
 	print("✅ Все сигналы подключены")

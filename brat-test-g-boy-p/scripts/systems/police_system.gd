@@ -32,6 +32,13 @@ func on_time_passed(minutes: int):
 			var decay = randi_range(1, 3)
 			reduce_ua(decay, "естественное снижение")
 
+# ✅ НОВОЕ: Снижение УА каждый день на 1-10 пунктов
+func on_day_changed(_day: int, _month: int, _year: int):
+	if ua_level > 0:
+		var daily_decay = randi_range(1, 10)
+		reduce_ua(daily_decay, "снижение за новый день")
+		print("📅 Новый день: УА снижено на %d" % daily_decay)
+
 # Проверка засады при движении (НЕ на месте преступления)
 func check_ambush_on_move(main_node: Node) -> bool:
 	if ua_level < 50:

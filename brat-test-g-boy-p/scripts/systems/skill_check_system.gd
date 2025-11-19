@@ -16,41 +16,49 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 	var tool_level = 0
 
 	if tool_required != null and tool_required != "":
-		# ✅ ФИКС: Проверка конкретных предметов для категорий инструментов
+		# ✅ ФИКС: Проверка ТОЛЬКО экипированных предметов (не инвентарь!)
 		if tool_required == "melee_weapon":
-			# Проверяем любое оружие ближнего боя в экипировке или инвентаре
+			# Проверяем ТОЛЬКО экипированное оружие ближнего боя
 			var equipped_melee = player_data.get("equipment", {}).get("melee", null)
-			var inventory = player_data.get("inventory", [])
-
-			# Проверяем экипированное оружие
 			has_tool = equipped_melee != null and equipped_melee != ""
-
-			# Если ничего не экипировано, проверяем инвентарь
-			if not has_tool:
-				has_tool = "Нож" in inventory or "Бита" in inventory or "Лом" in inventory
 
 			if has_tool:
 				# Определяем уровень оружия
-				if equipped_melee == "Лом" or "Лом" in inventory:
+				if equipped_melee == "Лом":
 					tool_level = 2
-				elif equipped_melee == "Бита" or "Бита" in inventory:
+				elif equipped_melee == "Бита":
 					tool_level = 1
-				elif equipped_melee == "Нож" or "Нож" in inventory:
+				elif equipped_melee == "Нож":
 					tool_level = 1
 				else:
 					# Любое другое оружие ближнего боя
 					tool_level = 1
+				print("✅ Найдено оружие ближнего боя: %s (уровень: %d)" % [equipped_melee, tool_level])
+			else:
+				print("❌ Нет экипированного оружия ближнего боя (equipment['melee'] пуст)")
 		elif tool_required == "crowbar":
-			# Лом - специальный инструмент для прочных окон/дверей
-			var inventory = player_data.get("inventory", [])
+			# Лом - специальный инструмент для прочных окон/дверей (только экипированный!)
 			var equipped_melee = player_data.get("equipment", {}).get("melee", null)
-			has_tool = (equipped_melee == "Лом") or ("Лом" in inventory)
+			has_tool = equipped_melee == "Лом"
 			tool_level = 2 if has_tool else 0
+			if has_tool:
+				print("✅ Найден лом в equipment['melee']")
+			else:
+				print("❌ Лом не экипирован (требуется в equipment['melee'])")
 		elif tool_required == "lockpick":
-			# Отмычка - инструмент для взлома замков
-			var inventory = player_data.get("inventory", [])
-			has_tool = "Отмычка" in inventory
+			# Отмычка - инструмент для взлома замков (проверяем gadget и pockets)
+			var equipped_gadget = player_data.get("equipment", {}).get("gadget", null)
+			var pockets = player_data.get("pockets", [null, null, null])
+
+			# Проверяем gadget слот и карманы
+			has_tool = equipped_gadget == "Отмычка" or "Отмычка" in pockets
 			tool_level = 1 if has_tool else 0
+
+			if has_tool:
+				var location = "equipment['gadget']" if equipped_gadget == "Отмычка" else "pockets"
+				print("✅ Найдена отмычка в %s" % location)
+			else:
+				print("❌ Отмычка не экипирована (требуется в equipment['gadget'] или pockets)")
 		else:
 			# Для других инструментов - стандартная проверка
 			has_tool = player_data.get(tool_required, false)
