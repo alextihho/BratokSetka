@@ -425,7 +425,7 @@ func start_robbery_stepwise(robbery_id: String, main_node: Node, player_data: Di
 func show_planning_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
 	PlanningStage.show(main_node, player_data, robbery, robbery_state,
-		func(approach): on_approach_selected(approach, main_node, player_data))
+		func(approach): on_approach_selected(approach, main_node, player_data), self)
 
 # Обработка выбора подхода
 func on_approach_selected(approach: String, main_node: Node, player_data: Dictionary):
@@ -459,14 +459,14 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 func show_entry_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
 	EntryStage.show(main_node, player_data, robbery, robbery_state,
-		func(entry_method): on_entry_selected(entry_method, main_node, player_data))
+		func(entry_method): on_entry_selected(entry_method, main_node, player_data), player_stats, self)
 
 # Обработка выбора способа проникновения
 func on_entry_selected(entry_method: String, main_node: Node, player_data: Dictionary):
 	robbery_state["entry_method"] = entry_method
 
 	# ✅ Применяем модификаторы из модуля
-	EntryStage.apply_modifiers(entry_method, robbery_state, player_data)
+	EntryStage.apply_modifiers(entry_method, robbery_state, player_stats)
 
 	# Закрыть текущее меню
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
@@ -481,7 +481,7 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 func show_action_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
 	ActionStage.show(main_node, player_data, robbery, robbery_state,
-		func(loot_amount): on_action_selected(loot_amount, main_node, player_data))
+		func(loot_amount): on_action_selected(loot_amount, main_node, player_data), self)
 
 # Обработка выбора количества добычи
 func on_action_selected(loot_amount: String, main_node: Node, player_data: Dictionary):
@@ -503,7 +503,7 @@ func on_action_selected(loot_amount: String, main_node: Node, player_data: Dicti
 func show_escape_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
 	EscapeStage.show(main_node, player_data, robbery, robbery_state,
-		func(escape_method): on_escape_selected(escape_method, main_node, player_data))
+		func(escape_method): on_escape_selected(escape_method, main_node, player_data), self)
 
 # Обработка выбора способа побега
 func on_escape_selected(escape_method: String, main_node: Node, player_data: Dictionary):

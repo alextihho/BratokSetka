@@ -4,7 +4,7 @@ extends Node
 const StageUIHelper = preload("res://scripts/systems/robbery_stages/stage_ui_helper.gd")
 
 # Создать UI этапа действия
-static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_action_selected: Callable):
+static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_action_selected: Callable, robbery_system):
 	var window = StageUIHelper.create_stage_window(
 		main_node,
 		robbery["icon"] + " ДЕЙСТВИЕ",
@@ -67,7 +67,7 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 	)
 
 	# Кнопка отмены
-	StageUIHelper.create_cancel_button(stage_menu, main_node, player_data)
+	StageUIHelper.create_cancel_button(stage_menu, main_node, player_data, robbery_system)
 
 # Применить модификаторы в зависимости от выбора
 static func apply_modifiers(loot_amount: String, robbery_state: Dictionary):

@@ -92,7 +92,7 @@ static func create_choice_button(parent: CanvasLayer, y: int, btn_title: String,
 	parent.add_child(btn)
 
 # Создать кнопку отмены
-static func create_cancel_button(parent: CanvasLayer, main_node: Node, player_data: Dictionary):
+static func create_cancel_button(parent: CanvasLayer, main_node: Node, player_data: Dictionary, robbery_system):
 	var cancel_btn = Button.new()
 	cancel_btn.custom_minimum_size = Vector2(660, 50)
 	cancel_btn.position = Vector2(30, 1070)
@@ -103,7 +103,6 @@ static func create_cancel_button(parent: CanvasLayer, main_node: Node, player_da
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
 
-	var robbery_system = get_node_or_null("/root/RobberySystem")
 	cancel_btn.pressed.connect(func():
 		parent.queue_free()
 		if robbery_system:

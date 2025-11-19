@@ -4,7 +4,7 @@ extends Node
 const StageUIHelper = preload("res://scripts/systems/robbery_stages/stage_ui_helper.gd")
 
 # Создать UI этапа проникновения
-static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_entry_selected: Callable):
+static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_entry_selected: Callable, player_stats, robbery_system):
 	var window = StageUIHelper.create_stage_window(
 		main_node,
 		robbery["icon"] + " ПРОНИКНОВЕНИЕ",
@@ -27,9 +27,6 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 	approach_label.add_theme_font_size_override("font_size", 14)
 	approach_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
 	stage_menu.add_child(approach_label)
-
-	# Получить player_stats
-	var player_stats = get_node_or_null("/root/PlayerStatsSystem")
 
 	# Вариант 1: Взломать замок
 	var has_lockpick = player_data.get("has_lockpick", false) or (player_stats and player_stats.get_stat("AGI") >= 7)
@@ -66,11 +63,10 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 	)
 
 	# Кнопка отмены
-	StageUIHelper.create_cancel_button(stage_menu, main_node, player_data)
+	StageUIHelper.create_cancel_button(stage_menu, main_node, player_data, robbery_system)
 
 # Применить модификаторы в зависимости от выбора
-static func apply_modifiers(entry_method: String, robbery_state: Dictionary, player_data: Dictionary):
-	var player_stats = get_node_or_null("/root/PlayerStatsSystem")
+static func apply_modifiers(entry_method: String, robbery_state: Dictionary, player_stats):
 
 	match entry_method:
 		"lockpick":

@@ -2,7 +2,7 @@
 extends Node
 
 # Создать UI этапа планирования
-static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_approach_selected: Callable):
+static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, robbery_state: Dictionary, on_approach_selected: Callable, robbery_system):
 	var stage_menu = CanvasLayer.new()
 	stage_menu.name = "RobberyStageMenu"
 	stage_menu.layer = 150
@@ -79,7 +79,6 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
 	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
 
-	var robbery_system = get_node_or_null("/root/RobberySystem")
 	cancel_btn.pressed.connect(func():
 		stage_menu.queue_free()
 		if robbery_system:
