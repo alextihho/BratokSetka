@@ -207,18 +207,6 @@ func handle_location_action(action_index: int):
 
 	print("🎯 Действие %d в локации %s" % [action_index, current_location])
 
-	# ✅ ОБРАБОТКА АВТОСАЛОНА
-	if current_location == "АВТОСАЛОН":
-		var car_sys = get_node_or_null("/root/CarSystem")  # ✅ ФИКС: Получаем напрямую!
-		if car_sys:
-			print("✅ Передаём управление CarSystem")
-			close_location_menu()
-			car_sys.show_car_dealership_menu(self, player_data)
-		else:
-			print("❌ CarSystem не загружен!")
-			show_message("❌ Автосалон недоступен")
-		return
-
 	# ✅ ОБРАБОТКА БАРА
 	if current_location == "БАР":
 		if action_index == 0 or action_index == 1:  # Отдохнуть или Бухать
