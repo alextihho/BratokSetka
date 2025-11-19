@@ -460,6 +460,12 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 
 # ✅ ЭТАП 2: Проникновение (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_entry_stage(main_node: Node, player_data: Dictionary):
+	# ✅ Закрываем старое окно результата если оно есть
+	var old_result = main_node.get_node_or_null("StageResultWindow")
+	if old_result:
+		old_result.queue_free()
+		print("  - Закрыто старое StageResultWindow перед этапом проникновения")
+
 	var robbery = robberies[robbery_state["robbery_id"]]
 	EntryStage.show(main_node, player_data, robbery, robbery_state,
 		func(entry_method): on_entry_selected(entry_method, main_node, player_data), player_stats, self)
@@ -556,6 +562,12 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 
 # ✅ ЭТАП 3: Действие (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_action_stage(main_node: Node, player_data: Dictionary):
+	# ✅ Закрываем старое окно результата если оно есть
+	var old_result = main_node.get_node_or_null("StageResultWindow")
+	if old_result:
+		old_result.queue_free()
+		print("  - Закрыто старое StageResultWindow перед этапом действия")
+
 	var robbery = robberies[robbery_state["robbery_id"]]
 	ActionStage.show(main_node, player_data, robbery, robbery_state,
 		func(loot_amount): on_action_selected(loot_amount, main_node, player_data), self)
@@ -578,12 +590,19 @@ func on_action_selected(loot_amount: String, main_node: Node, player_data: Dicti
 
 # ✅ ЭТАП 4: Побег (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_escape_stage(main_node: Node, player_data: Dictionary):
+	# ✅ Закрываем старое окно результата если оно есть
+	var old_result = main_node.get_node_or_null("StageResultWindow")
+	if old_result:
+		old_result.queue_free()
+		print("  - Закрыто старое StageResultWindow перед этапом побега")
+
 	var robbery = robberies[robbery_state["robbery_id"]]
 	EscapeStage.show(main_node, player_data, robbery, robbery_state,
 		func(escape_method): on_escape_selected(escape_method, main_node, player_data), self)
 
 # Обработка выбора способа побега
 func on_escape_selected(escape_method: String, main_node: Node, player_data: Dictionary):
+	print("🏃 on_escape_selected вызван, метод: %s" % escape_method)
 	robbery_state["escape_method"] = escape_method
 
 	# ✅ Применяем модификаторы из модуля
@@ -591,7 +610,9 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 
 	# Завершить ограбление (С AWAIT!)
 	robbery_state["stage"] = 4
+	print("🎬 Вызываем complete_robbery_stepwise...")
 	await complete_robbery_stepwise(main_node, player_data)
+	print("✅ complete_robbery_stepwise завершено, ограбление полностью закончено")
 
 # ✅ Генерация художественного текста (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func generate_robbery_story(robbery: Dictionary, caught: bool, reward: int) -> String:
