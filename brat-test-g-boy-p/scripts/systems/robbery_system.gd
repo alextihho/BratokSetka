@@ -594,13 +594,25 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 
 	print("🎭 Ограбление завершено: " + robbery["name"] + " | Награда: " + str(reward))
 
-	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем все окна ограблений
+	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем все окна ограблений ПОСЛЕ show_message
+	await main_node.get_tree().process_frame
+	await main_node.get_tree().process_frame
+
 	var old_menu = main_node.get_node_or_null("RobberiesMenu")
 	if old_menu:
+		print("🗑️ Удаляем RobberiesMenu")
 		old_menu.queue_free()
+
 	var stage_menu = main_node.get_node_or_null("RobberyStageMenu")
 	if stage_menu:
+		print("🗑️ Удаляем RobberyStageMenu")
 		stage_menu.queue_free()
+
+	# Проверяем все дочерние узлы на наличие окон ограблений
+	for child in main_node.get_children():
+		if child.name in ["RobberiesMenu", "RobberyStageMenu"]:
+			print("🗑️ Принудительно удаляем оставшийся узел: " + child.name)
+			child.queue_free()
 
 	# ✅ НОВОЕ: Проверка вызова полиции ПОСЛЕ ограбления (100% при УА=100)
 	if police_system and police_system.ua_level >= 100:
