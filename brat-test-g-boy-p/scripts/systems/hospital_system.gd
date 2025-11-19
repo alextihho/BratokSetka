@@ -49,6 +49,120 @@ func _ready():
 	items_db = get_node_or_null("/root/ItemsDB")
 	print("🏥 Система больниц загружена")
 
+# Меню выбора: лечить игрока или членов банды
+func show_hospital_choice_menu(main_node: Node, player_data: Dictionary):
+	var choice_menu = CanvasLayer.new()
+	choice_menu.layer = 100
+	choice_menu.name = "HospitalChoiceMenu"
+	main_node.add_child(choice_menu)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.8)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	choice_menu.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(600, 490)
+	bg.position = Vector2(60, 395)
+	bg.color = Color(0.05, 0.05, 0.1, 0.95)
+	choice_menu.add_child(bg)
+
+	var title = Label.new()
+	title.text = "🏥 БОЛЬНИЦА"
+	title.position = Vector2(250, 415)
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color(0.3, 0.8, 1.0, 1.0))
+	choice_menu.add_child(title)
+
+	# Кнопка "Лечить себя"
+	var self_btn = Button.new()
+	self_btn.custom_minimum_size = Vector2(560, 70)
+	self_btn.position = Vector2(80, 480)
+	self_btn.text = "🩹 ЛЕЧИТЬ СЕБЯ"
+
+	var style_self = StyleBoxFlat.new()
+	style_self.bg_color = Color(0.2, 0.6, 0.8, 1.0)
+	self_btn.add_theme_stylebox_override("normal", style_self)
+
+	var style_self_hover = StyleBoxFlat.new()
+	style_self_hover.bg_color = Color(0.3, 0.7, 0.9, 1.0)
+	self_btn.add_theme_stylebox_override("hover", style_self_hover)
+
+	self_btn.add_theme_font_size_override("font_size", 22)
+
+	self_btn.pressed.connect(func():
+		choice_menu.queue_free()
+		show_hospital_menu(main_node, player_data)
+	)
+	choice_menu.add_child(self_btn)
+
+	# Кнопка "Лечить банду"
+	var gang_btn = Button.new()
+	gang_btn.custom_minimum_size = Vector2(560, 70)
+	gang_btn.position = Vector2(80, 570)
+	gang_btn.text = "👥 ЛЕЧИТЬ ЧЛЕНОВ БАНДЫ"
+
+	var style_gang = StyleBoxFlat.new()
+	style_gang.bg_color = Color(0.6, 0.4, 0.2, 1.0)
+	gang_btn.add_theme_stylebox_override("normal", style_gang)
+
+	var style_gang_hover = StyleBoxFlat.new()
+	style_gang_hover.bg_color = Color(0.7, 0.5, 0.3, 1.0)
+	gang_btn.add_theme_stylebox_override("hover", style_gang_hover)
+
+	gang_btn.add_theme_font_size_override("font_size", 22)
+
+	gang_btn.pressed.connect(func():
+		choice_menu.queue_free()
+		show_gang_hospital_menu(main_node, player_data)
+	)
+	choice_menu.add_child(gang_btn)
+
+	# Кнопка "Спасти раненых"
+	var rescue_btn = Button.new()
+	rescue_btn.custom_minimum_size = Vector2(560, 70)
+	rescue_btn.position = Vector2(80, 660)
+	rescue_btn.text = "🚑 СПАСТИ РАНЕНЫХ БОЙЦОВ"
+
+	var style_rescue = StyleBoxFlat.new()
+	style_rescue.bg_color = Color(0.8, 0.2, 0.2, 1.0)
+	rescue_btn.add_theme_stylebox_override("normal", style_rescue)
+
+	var style_rescue_hover = StyleBoxFlat.new()
+	style_rescue_hover.bg_color = Color(0.9, 0.3, 0.3, 1.0)
+	rescue_btn.add_theme_stylebox_override("hover", style_rescue_hover)
+
+	rescue_btn.add_theme_font_size_override("font_size", 22)
+
+	rescue_btn.pressed.connect(func():
+		choice_menu.queue_free()
+		show_rescue_menu(main_node, player_data)
+	)
+	choice_menu.add_child(rescue_btn)
+
+	# Кнопка закрытия
+	var close_btn = Button.new()
+	close_btn.custom_minimum_size = Vector2(560, 60)
+	close_btn.position = Vector2(80, 750)
+	close_btn.text = "ЗАКРЫТЬ"
+
+	var style_close = StyleBoxFlat.new()
+	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	close_btn.add_theme_stylebox_override("normal", style_close)
+
+	var style_close_hover = StyleBoxFlat.new()
+	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
+	close_btn.add_theme_stylebox_override("hover", style_close_hover)
+
+	close_btn.add_theme_font_size_override("font_size", 20)
+	close_btn.pressed.connect(func():
+		choice_menu.queue_free()
+		main_node.show_location_menu("БОЛЬНИЦА")
+	)
+
+	choice_menu.add_child(close_btn)
+
 # Показать меню больницы
 func show_hospital_menu(main_node: Node, player_data: Dictionary):
 	var hospital_menu = CanvasLayer.new()
@@ -521,3 +635,396 @@ func use_healing_item(item_name: String, player_data: Dictionary, main_node: Nod
 # Проверка, лечится ли игрок сейчас
 func is_treating() -> bool:
 	return current_treatment != null
+
+# Меню лечения членов банды
+func show_gang_hospital_menu(main_node: Node, player_data: Dictionary):
+	var gang_menu = CanvasLayer.new()
+	gang_menu.layer = 100
+	gang_menu.name = "GangHospitalMenu"
+	main_node.add_child(gang_menu)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.8)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	gang_menu.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(700, 1100)
+	bg.position = Vector2(10, 90)
+	bg.color = Color(0.05, 0.05, 0.1, 0.95)
+	gang_menu.add_child(bg)
+
+	var title = Label.new()
+	title.text = "👥 ЛЕЧЕНИЕ БАНДЫ"
+	title.position = Vector2(220, 110)
+	title.add_theme_font_size_override("font_size", 32)
+	title.add_theme_color_override("font_color", Color(1.0, 0.6, 0.2, 1.0))
+	gang_menu.add_child(title)
+
+	var hint = Label.new()
+	hint.text = "Выберите члена банды для лечения:"
+	hint.position = Vector2(190, 170)
+	hint.add_theme_font_size_override("font_size", 16)
+	hint.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
+	gang_menu.add_child(hint)
+
+	# Список членов банды
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+
+	var y_pos = 220
+	var wounded_count = 0
+
+	for i in range(gang_members.size()):
+		var member = gang_members[i]
+		var hp = member.get("hp", 100)
+		var max_hp = member.get("max_hp", 100)
+		var hp_percent = (float(hp) / float(max_hp)) * 100
+
+		# Показываем только раненых (HP < 100%)
+		if hp < max_hp:
+			wounded_count += 1
+			create_gang_member_card(member, i, hp, max_hp, hp_percent, gang_menu, y_pos, main_node, player_data)
+			y_pos += 160
+
+	# Если все здоровы
+	if wounded_count == 0:
+		var all_healthy = Label.new()
+		all_healthy.text = "✅ Все члены банды здоровы!"
+		all_healthy.position = Vector2(220, 400)
+		all_healthy.add_theme_font_size_override("font_size", 22)
+		all_healthy.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
+		gang_menu.add_child(all_healthy)
+
+	# Кнопка назад
+	var back_btn = Button.new()
+	back_btn.custom_minimum_size = Vector2(680, 50)
+	back_btn.position = Vector2(20, 1100)
+	back_btn.text = "НАЗАД"
+
+	var style_back = StyleBoxFlat.new()
+	style_back.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	back_btn.add_theme_stylebox_override("normal", style_back)
+
+	var style_back_hover = StyleBoxFlat.new()
+	style_back_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
+	back_btn.add_theme_stylebox_override("hover", style_back_hover)
+
+	back_btn.add_theme_font_size_override("font_size", 20)
+	back_btn.pressed.connect(func():
+		gang_menu.queue_free()
+		show_hospital_choice_menu(main_node, player_data)
+	)
+
+	gang_menu.add_child(back_btn)
+
+# Создать карточку члена банды
+func create_gang_member_card(member: Dictionary, index: int, hp: int, max_hp: int, hp_percent: float, parent: CanvasLayer, y_pos: int, main_node: Node, player_data: Dictionary):
+	var card_bg = ColorRect.new()
+	card_bg.size = Vector2(680, 150)
+	card_bg.position = Vector2(20, y_pos)
+	card_bg.color = Color(0.15, 0.1, 0.1, 1.0)
+	parent.add_child(card_bg)
+
+	# Имя
+	var name_label = Label.new()
+	name_label.text = member.get("name", "Неизвестный")
+	name_label.position = Vector2(40, y_pos + 15)
+	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+	parent.add_child(name_label)
+
+	# HP инфо
+	var hp_label = Label.new()
+	hp_label.text = "❤️ %d/%d (%d%%)" % [hp, max_hp, int(hp_percent)]
+	hp_label.position = Vector2(40, y_pos + 45)
+	hp_label.add_theme_font_size_override("font_size", 18)
+
+	var hp_color = Color.GREEN
+	if hp_percent < 30:
+		hp_color = Color.RED
+	elif hp_percent < 60:
+		hp_color = Color.YELLOW
+
+	hp_label.add_theme_color_override("font_color", hp_color)
+	parent.add_child(hp_label)
+
+	# HP бар
+	var hp_bar_bg = ColorRect.new()
+	hp_bar_bg.size = Vector2(300, 20)
+	hp_bar_bg.position = Vector2(40, y_pos + 75)
+	hp_bar_bg.color = Color(0.2, 0.2, 0.2, 1.0)
+	parent.add_child(hp_bar_bg)
+
+	var hp_bar_fill = ColorRect.new()
+	hp_bar_fill.size = Vector2(300 * (hp_percent / 100.0), 20)
+	hp_bar_fill.position = Vector2(40, y_pos + 75)
+	hp_bar_fill.color = hp_color
+	parent.add_child(hp_bar_fill)
+
+	# Нужно HP
+	var needed_hp = max_hp - hp
+	var cost = needed_hp * 5  # 5 рублей за 1 HP
+
+	var cost_label = Label.new()
+	cost_label.text = "💰 Стоимость лечения: %d руб." % cost
+	cost_label.position = Vector2(40, y_pos + 105)
+	cost_label.add_theme_font_size_override("font_size", 16)
+	cost_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
+	parent.add_child(cost_label)
+
+	# Кнопка лечения
+	var heal_btn = Button.new()
+	heal_btn.custom_minimum_size = Vector2(200, 50)
+	heal_btn.position = Vector2(480, y_pos + 50)
+	heal_btn.text = "ВЫЛЕЧИТЬ"
+
+	var can_afford = player_data["balance"] >= cost
+
+	heal_btn.disabled = not can_afford
+
+	var style_heal = StyleBoxFlat.new()
+	style_heal.bg_color = Color(0.2, 0.6, 0.2, 1.0) if can_afford else Color(0.3, 0.3, 0.3, 1.0)
+	heal_btn.add_theme_stylebox_override("normal", style_heal)
+
+	if can_afford:
+		var style_heal_hover = StyleBoxFlat.new()
+		style_heal_hover.bg_color = Color(0.3, 0.7, 0.3, 1.0)
+		heal_btn.add_theme_stylebox_override("hover", style_heal_hover)
+
+	heal_btn.add_theme_font_size_override("font_size", 18)
+
+	var member_index = index
+	heal_btn.pressed.connect(func():
+		heal_gang_member(member_index, needed_hp, cost, main_node, player_data)
+	)
+
+	parent.add_child(heal_btn)
+
+# Вылечить члена банды
+func heal_gang_member(member_index: int, heal_amount: int, cost: int, main_node: Node, player_data: Dictionary):
+	# Проверка денег
+	if player_data["balance"] < cost:
+		main_node.show_message("❌ Недостаточно денег!")
+		return
+
+	# Списываем деньги
+	player_data["balance"] -= cost
+
+	# Лечим
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+	if member_index < gang_members.size():
+		var member = gang_members[member_index]
+		member["hp"] = min(member.get("max_hp", 100), member.get("hp", 100) + heal_amount)
+
+		main_node.show_message("✅ %s вылечен! +%d HP" % [member.get("name", "Член банды"), heal_amount])
+		main_node.update_ui()
+
+		# Обновляем меню
+		var gang_menu = main_node.get_node_or_null("GangHospitalMenu")
+		if gang_menu:
+			gang_menu.queue_free()
+			show_gang_hospital_menu(main_node, player_data)
+
+# Меню спасения раненых бойцов
+func show_rescue_menu(main_node: Node, player_data: Dictionary):
+	var rescue_menu = CanvasLayer.new()
+	rescue_menu.layer = 100
+	rescue_menu.name = "RescueMenu"
+	main_node.add_child(rescue_menu)
+
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.color = Color(0, 0, 0, 0.8)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	rescue_menu.add_child(overlay)
+
+	var bg = ColorRect.new()
+	bg.size = Vector2(680, 1100)
+	bg.position = Vector2(20, 90)
+	bg.color = Color(0.1, 0.05, 0.05, 0.95)
+	rescue_menu.add_child(bg)
+
+	var title = Label.new()
+	title.text = "🚑 СПАСЕНИЕ РАНЕНЫХ"
+	title.position = Vector2(180, 110)
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	rescue_menu.add_child(title)
+
+	var subtitle = Label.new()
+	subtitle.text = "Раненые бойцы нуждаются в срочной помощи"
+	subtitle.position = Vector2(140, 155)
+	subtitle.add_theme_font_size_override("font_size", 16)
+	subtitle.add_theme_color_override("font_color", Color(0.9, 0.7, 0.7, 1.0))
+	rescue_menu.add_child(subtitle)
+
+	# Получаем список раненых (HP = 0)
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+	var wounded = []
+
+	for i in range(gang_members.size()):
+		if i == 0:
+			continue  # Пропускаем ГГ
+
+		var member = gang_members[i]
+		var hp = member.get("hp", member.get("health", 100))
+		var max_hp = member.get("max_hp", 100)
+
+		if hp <= 0:
+			wounded.append({"index": i, "member": member, "hp": hp, "max_hp": max_hp})
+
+	var y_pos = 200
+
+	if wounded.size() == 0:
+		var no_wounded = Label.new()
+		no_wounded.text = "✅ Нет раненых бойцов"
+		no_wounded.position = Vector2(220, y_pos + 100)
+		no_wounded.add_theme_font_size_override("font_size", 22)
+		no_wounded.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
+		rescue_menu.add_child(no_wounded)
+	else:
+		var info = Label.new()
+		info.text = "💰 Стоимость спасения одного бойца: 500 руб."
+		info.position = Vector2(140, y_pos)
+		info.add_theme_font_size_override("font_size", 16)
+		info.add_theme_color_override("font_color", Color(1.0, 1.0, 0.5, 1.0))
+		rescue_menu.add_child(info)
+		y_pos += 40
+
+		# ScrollContainer для раненых
+		var scroll = ScrollContainer.new()
+		scroll.position = Vector2(30, y_pos)
+		scroll.size = Vector2(660, 750)
+		scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		rescue_menu.add_child(scroll)
+
+		var vbox = VBoxContainer.new()
+		vbox.add_theme_constant_override("separation", 10)
+		scroll.add_child(vbox)
+
+		# Карточки раненых
+		for wounded_data in wounded:
+			create_wounded_card(wounded_data, vbox, main_node, player_data)
+
+	# Кнопка закрытия
+	var close_btn = Button.new()
+	close_btn.custom_minimum_size = Vector2(660, 60)
+	close_btn.position = Vector2(30, 1100)
+	close_btn.text = "ЗАКРЫТЬ"
+
+	var style_close = StyleBoxFlat.new()
+	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
+	close_btn.add_theme_stylebox_override("normal", style_close)
+
+	var style_close_hover = StyleBoxFlat.new()
+	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
+	close_btn.add_theme_stylebox_override("hover", style_close_hover)
+
+	close_btn.add_theme_font_size_override("font_size", 20)
+	close_btn.pressed.connect(func():
+		rescue_menu.queue_free()
+		show_hospital_choice_menu(main_node, player_data)
+	)
+	rescue_menu.add_child(close_btn)
+
+# Создать карточку раненого бойца
+func create_wounded_card(wounded_data: Dictionary, parent: VBoxContainer, main_node: Node, player_data: Dictionary):
+	var card = ColorRect.new()
+	card.custom_minimum_size = Vector2(640, 150)
+	card.color = Color(0.2, 0.1, 0.1, 1.0)
+	parent.add_child(card)
+
+	var member = wounded_data["member"]
+	var member_index = wounded_data["index"]
+	var max_hp = wounded_data["max_hp"]
+
+	# Имя бойца
+	var name_label = Label.new()
+	name_label.text = "💀 " + member.get("name", "Боец " + str(member_index))
+	name_label.position = Vector2(15, 15)
+	name_label.add_theme_font_size_override("font_size", 22)
+	name_label.add_theme_color_override("font_color", Color(1.0, 0.5, 0.5, 1.0))
+	card.add_child(name_label)
+
+	# Статус
+	var status_label = Label.new()
+	status_label.text = "⚠️ КРИТИЧЕСКОЕ СОСТОЯНИЕ"
+	status_label.position = Vector2(15, 45)
+	status_label.add_theme_font_size_override("font_size", 16)
+	status_label.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
+	card.add_child(status_label)
+
+	# Описание
+	var desc_label = Label.new()
+	desc_label.text = "Боец нуждается в срочной госпитализации и лечении"
+	desc_label.position = Vector2(15, 70)
+	desc_label.add_theme_font_size_override("font_size", 14)
+	desc_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
+	card.add_child(desc_label)
+
+	# Стоимость
+	var cost = 500
+	var cost_label = Label.new()
+	cost_label.text = "💰 Стоимость: " + str(cost) + " руб."
+	cost_label.position = Vector2(15, 95)
+	cost_label.add_theme_font_size_override("font_size", 16)
+	cost_label.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
+	card.add_child(cost_label)
+
+	# Кнопка спасения
+	var rescue_btn = Button.new()
+	rescue_btn.custom_minimum_size = Vector2(200, 50)
+	rescue_btn.position = Vector2(420, 80)
+	rescue_btn.text = "🚑 СПАСТИ"
+
+	var style_rescue = StyleBoxFlat.new()
+	style_rescue.bg_color = Color(0.3, 0.7, 0.3, 1.0)
+	rescue_btn.add_theme_stylebox_override("normal", style_rescue)
+
+	var style_rescue_hover = StyleBoxFlat.new()
+	style_rescue_hover.bg_color = Color(0.4, 0.8, 0.4, 1.0)
+	rescue_btn.add_theme_stylebox_override("hover", style_rescue_hover)
+
+	rescue_btn.add_theme_font_size_override("font_size", 18)
+
+	rescue_btn.pressed.connect(func():
+		rescue_gang_member(member_index, cost, main_node, player_data)
+	)
+	card.add_child(rescue_btn)
+
+# Спасти раненого члена банды
+func rescue_gang_member(member_index: int, cost: int, main_node: Node, player_data: Dictionary):
+	# Проверка денег
+	if player_data["balance"] < cost:
+		main_node.show_message("❌ Недостаточно денег! Нужно: " + str(cost) + " руб.")
+		return
+
+	# Списываем деньги
+	player_data["balance"] -= cost
+
+	# Спасаем - восстанавливаем HP до максимума
+	var gang_members = main_node.gang_members if "gang_members" in main_node else []
+	if member_index < gang_members.size():
+		var member = gang_members[member_index]
+		var max_hp = member.get("max_hp", 100)
+
+		# Восстанавливаем HP и health
+		member["hp"] = max_hp
+		member["health"] = max_hp
+
+		var member_name = member.get("name", "Боец " + str(member_index))
+		main_node.show_message("✅ %s спасён! HP восстановлено до %d" % [member_name, max_hp])
+		main_node.update_ui()
+
+		# Лог
+		var log_system = get_node_or_null("/root/LogSystem")
+		if log_system:
+			log_system.add_success_log("Врачи смогли спасти %s. Боец снова в строю!" % member_name)
+
+		# Обновляем меню
+		var rescue_menu = main_node.get_node_or_null("RescueMenu")
+		if rescue_menu:
+			rescue_menu.queue_free()
+			show_rescue_menu(main_node, player_data)

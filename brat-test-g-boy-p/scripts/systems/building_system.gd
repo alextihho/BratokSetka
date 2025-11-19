@@ -35,6 +35,8 @@ func handle_building_action(location: String, action_index: int, player_data: Di
 			handle_station_action(action_index, player_data, main_node, time_system, police_system)
 		"ФСБ":
 			handle_fsb_action(action_index, player_data, main_node, time_system, police_system)
+		"БОЛЬНИЦА":
+			handle_hospital_action(action_index, player_data, main_node, time_system, police_system)
 	
 	building_action_completed.emit(location, action_index)
 
@@ -897,3 +899,33 @@ func complete_purchase(item_name: String, price: int, player_data: Dictionary, r
 			"Покупка на черном рынке - дело обычное. Главное не попасться ментам."
 		]
 		log_system.add_event_log(texts[randi() % texts.size()])
+
+# БОЛЬНИЦА
+func handle_hospital_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
+	var hospital_system = get_node_or_null("/root/HospitalSystem")
+	if not hospital_system:
+		main_node.show_message("❌ Система больницы недоступна")
+		return
+
+	match action_index:
+		0: # Лечиться
+			hospital_system.show_hospital_choice_menu(main_node, player_data)
+			if log_system:
+				log_system.add_event_log("Вошли в городскую больницу. Медсестра кивнула: 'Чем помочь?'")
+			if time_system:
+				time_system.add_minutes(5)
+		1: # Купить аптечку (100р)
+			buy_item("Аптечка", player_data, main_node)
+			if log_system:
+				var texts = [
+					"Аптечка первой помощи. Бинты, перекись, зелёнка - всё на месте.",
+					"Купил аптечку. В 90-е это must-have для каждого пацана.",
+					"Медсестра протянула аптечку: 'Береги себя на улицах'."
+				]
+				log_system.add_event_log(texts[randi() % texts.size()])
+			if time_system:
+				time_system.add_minutes(5)
+		2: # Уйти
+			main_node.close_location_menu()
+			if log_system:
+				log_system.add_event_log("Вышли из больницы. Пахнет хлоркой и лекарствами.")
