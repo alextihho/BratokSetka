@@ -584,9 +584,29 @@ func on_action_selected(loot_amount: String, main_node: Node, player_data: Dicti
 	if menu:
 		menu.queue_free()
 
-	# Переход к следующему этапу
-	robbery_state["stage"] = 3
-	show_escape_stage(main_node, player_data)
+	# ✅ НОВОЕ: Показываем окно результата с художественным текстом
+	var robbery = robberies[robbery_state["robbery_id"]]
+	var action_story = StageStoryGenerator.generate_action_story(loot_amount, robbery["building_type"])
+
+	var loot_text = ""
+	match loot_amount:
+		"quick": loot_text = "💨 Быстро"
+		"medium": loot_text = "⚖️ Умеренно"
+		"greedy": loot_text = "💰 Жадно"
+
+	var result_msg = "Добыча собрана: %s\n\n⏰ Время изменено согласно выбору" % loot_text
+
+	StageResultUI.show_stage_result(
+		main_node,
+		"✅ ДОБЫЧА СОБРАНА",
+		result_msg,
+		true,
+		action_story,
+		func():
+			print("🏃 Переход к этапу побега")
+			robbery_state["stage"] = 3
+			show_escape_stage(main_node, player_data)
+	)
 
 # ✅ ЭТАП 4: Побег (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_escape_stage(main_node: Node, player_data: Dictionary):
@@ -671,6 +691,31 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	if log_sys:
 		var story = generate_robbery_story(robbery, caught, reward)
 		log_sys.add_event_log(robbery["icon"] + " " + robbery["name"] + "\n" + story)
+
+	# ✅ НОВОЕ: Показываем окно результата побега с художественным текстом
+	var escape_story = StageStoryGenerator.generate_escape_story(robbery_state["escape_method"], caught)
+
+	var escape_result_title = "✅ ПОБЕГ УДАЛСЯ!" if not caught else "❌ ПОЙМАЛИ!"
+	var escape_result_msg = ""
+
+	if not caught:
+		escape_result_msg = "Вы успешно скрылись!\n\n💰 Награда: +%d руб.\n📈 Опыт получен" % reward
+	else:
+		escape_result_msg = "Вас заметили!\n\n💰 Награда: +%d руб. (урезана)\n⚠️ УА повышено" % reward
+
+	# Показываем окно результата
+	StageResultUI.show_stage_result(
+		main_node,
+		escape_result_title,
+		escape_result_msg,
+		not caught,
+		escape_story,
+		func():
+			print("💬 Закрываем окно результата побега, продолжаем завершение")
+	)
+
+	# Ждем пока игрок закроет окно результата
+	await main_node.get_tree().create_timer(0.5).timeout
 
 	# Обновить UI
 	main_node.update_ui()
