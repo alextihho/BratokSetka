@@ -18,23 +18,39 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 	if tool_required != null and tool_required != "":
 		# ✅ ФИКС: Проверка конкретных предметов для категорий инструментов
 		if tool_required == "melee_weapon":
-			# Проверяем любое оружие ближнего боя
-			has_tool = player_data.get("knife", false) or player_data.get("bat", false) or player_data.get("crowbar", false)
+			# Проверяем любое оружие ближнего боя в экипировке или инвентаре
+			var equipped_melee = player_data.get("equipment", {}).get("melee", null)
+			var inventory = player_data.get("inventory", [])
+
+			# Проверяем экипированное оружие
+			has_tool = equipped_melee != null and equipped_melee != ""
+
+			# Если ничего не экипировано, проверяем инвентарь
+			if not has_tool:
+				has_tool = "Нож" in inventory or "Бита" in inventory or "Лом" in inventory
+
 			if has_tool:
-				# Определяем уровень самого лучшего оружия
-				if player_data.get("crowbar", false):
-					tool_level = player_data.get("crowbar_level", 2)
-				elif player_data.get("bat", false):
-					tool_level = player_data.get("bat_level", 1)
-				elif player_data.get("knife", false):
-					tool_level = player_data.get("knife_level", 1)
+				# Определяем уровень оружия
+				if equipped_melee == "Лом" or "Лом" in inventory:
+					tool_level = 2
+				elif equipped_melee == "Бита" or "Бита" in inventory:
+					tool_level = 1
+				elif equipped_melee == "Нож" or "Нож" in inventory:
+					tool_level = 1
+				else:
+					# Любое другое оружие ближнего боя
+					tool_level = 1
 		elif tool_required == "crowbar":
 			# Лом - специальный инструмент для прочных окон/дверей
-			has_tool = player_data.get("crowbar", false)
-			tool_level = player_data.get("crowbar_level", 2)
+			var inventory = player_data.get("inventory", [])
+			var equipped_melee = player_data.get("equipment", {}).get("melee", null)
+			has_tool = (equipped_melee == "Лом") or ("Лом" in inventory)
+			tool_level = 2 if has_tool else 0
 		elif tool_required == "lockpick":
-			has_tool = player_data.get("lockpick", false)
-			tool_level = player_data.get("lockpick_level", 1)
+			# Отмычка - инструмент для взлома замков
+			var inventory = player_data.get("inventory", [])
+			has_tool = "Отмычка" in inventory
+			tool_level = 1 if has_tool else 0
 		else:
 			# Для других инструментов - стандартная проверка
 			has_tool = player_data.get(tool_required, false)

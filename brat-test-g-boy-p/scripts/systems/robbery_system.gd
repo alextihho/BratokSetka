@@ -693,8 +693,18 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	main_node.show_message(result_text)
 	print("💬 Показано итоговое сообщение")
 
+	# ✅ КРИТИЧЕСКИЙ ФИКС: Сбрасываем active_robbery чтобы можно было начать новое ограбление
+	active_robbery = null
+	robbery_completed.emit(robbery_state["robbery_id"], reward, caught)
+	print("✅ Ограбление завершено, active_robbery сброшен")
+
 	# ✅ НОВОЕ: Проверка вызова полиции ПОСЛЕ ограбления (100% при УА=100)
 	if police_system and police_system.ua_level >= 100:
 		# Ждем чуть-чуть чтобы игрок увидел результат
 		await main_node.get_tree().create_timer(1.5).timeout
 		police_system.check_police_after_crime(main_node)
+
+	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем меню локации и возвращаемся на карту
+	if main_node.has_method("close_location_menu"):
+		main_node.close_location_menu()
+		print("✅ Закрыто меню локации, возврат на карту")

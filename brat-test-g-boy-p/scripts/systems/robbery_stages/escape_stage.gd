@@ -63,14 +63,25 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 	y_pos += 140
 
 	# Вариант 3: На машине (если есть)
-	var has_car = player_data.get("has_car", false)
+	var has_car = player_data.get("car", null) != null
+	var car_ready = player_data.get("car_equipped", false)
+	var can_drive = has_car and car_ready
+
+	var car_desc = "Рвануть на тачке!\n"
+	if not has_car:
+		car_desc += "У вас нет машины! [ТРЕБУЕТСЯ МАШИНА]"
+	elif not car_ready:
+		car_desc += "Машина не готова! Назначьте водителя"
+	else:
+		car_desc += "Очень быстро, +Шум"
+
 	StageUIHelper.create_choice_button(
 		stage_menu,
 		y_pos,
 		"🚗 НА МАШИНЕ",
-		"Рвануть на тачке!\n" + ("Очень быстро, +Шум" if has_car else "У вас нет машины! [ТРЕБУЕТСЯ МАШИНА]"),
+		car_desc,
 		func(): on_escape_selected.call("car"),
-		has_car
+		can_drive
 	)
 
 	# Кнопка отмены
