@@ -1032,10 +1032,13 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 			robbery_state["modifiers"]["alarm_chance"] += 0.1
 			robbery_state["modifiers"]["time_mult"] *= 0.6
 
-	# Закрыть текущее меню
+	# ✅ ФИКС: Сначала закрыть меню, потом завершить ограбление
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
 	if menu:
 		menu.queue_free()
+
+	# Ждем следующий кадр чтобы меню точно закрылось
+	await main_node.get_tree().process_frame
 
 	# Завершить ограбление
 	robbery_state["stage"] = 4
@@ -1159,3 +1162,9 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	main_node.show_message(result_text)
 
 	print("🎭 Ограбление завершено: " + robbery["name"] + " | Награда: " + str(reward))
+
+	# ✅ НОВОЕ: Проверка вызова полиции ПОСЛЕ ограбления (100% при УА=100)
+	if police_system and police_system.ua_level >= 100:
+		# Ждем чуть-чуть чтобы игрок увидел результат
+		await main_node.get_tree().create_timer(1.5).timeout
+		police_system.check_police_after_crime(main_node)

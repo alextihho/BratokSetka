@@ -177,8 +177,18 @@ func start_battle(main_node: Node, enemy_type: String = "gopnik", is_first_battl
 				if gang_member.has("gang_member_index"):
 					var idx = gang_member["gang_member_index"]
 					if idx < main_node.gang_members.size():
+						var member_name = main_node.gang_members[idx]["name"]
+						var was_dead = gang_member.get("hp", 0) <= 0 or not gang_member.get("alive", true)
+
 						main_node.gang_members[idx]["hp"] = max(1, gang_member["hp"])
-						print("💾 HP %s: %d" % [main_node.gang_members[idx]["name"], main_node.gang_members[idx]["hp"]])
+						print("💾 HP %s: %d" % [member_name, main_node.gang_members[idx]["hp"]])
+
+						# ✅ ЛОГИРОВАНИЕ: Если боец был мертв, пишем что его вытащили
+						if was_dead:
+							var log_system = get_node_or_null("/root/LogSystem")
+							if log_system:
+								log_system.add_event_log("⚠️ %s потерял сознание в бою, но вы вытащили его из заварушки!" % member_name)
+							print("⚠️ %s был мёртв, но вытащен с 1 HP" % member_name)
 
 			# ✅ НОВОЕ: Сохранение HP машины после боя
 			for fighter in battle.battle_logic.player_team:

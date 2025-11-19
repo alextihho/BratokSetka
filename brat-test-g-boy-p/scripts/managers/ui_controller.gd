@@ -229,11 +229,17 @@ func update_ui():
 	
 	# ✅ НОВОЕ: Обновление УА
 	var ua_label = ui_layer.get_node_or_null("UALabel")
-	if ua_label and police_system:
-		var ua = police_system.ua_level
-		var ua_color = police_system.get_ua_color()
-		ua_label.text = "🚔 УА: %d (%s)" % [ua, police_system.get_ua_status()]
-		ua_label.add_theme_color_override("font_color", ua_color)
+	if ua_label:
+		# ✅ ФИКС: Принудительная перезагрузка police_system
+		if not police_system:
+			police_system = get_node_or_null("/root/PoliceSystem")
+
+		if police_system:
+			var ua = police_system.ua_level
+			var ua_color = police_system.get_ua_color()
+			ua_label.text = "🚔 УА: %d (%s)" % [ua, police_system.get_ua_status()]
+			ua_label.add_theme_color_override("font_color", ua_color)
+			print("✅ UI УА обновлен: %d" % ua)
 
 	# ✅ Обновление времени
 	update_time_display()
