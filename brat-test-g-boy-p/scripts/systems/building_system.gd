@@ -76,6 +76,12 @@ func handle_kiosk_action(action_index: int, player_data: Dictionary, main_node: 
 			show_black_market(player_data, main_node)
 			if log_system:
 				log_system.add_event_log("Продавец кивнул в сторону подсобки. 'Там всё есть, что нужно'.")
+		4: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "ЛАРЁК")
+			if log_system:
+				log_system.add_event_log("Оглядываешься по сторонам. Время действовать...")
 
 # ГАРАЖ
 func handle_garage_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
@@ -153,6 +159,12 @@ func handle_garage_action(action_index: int, player_data: Dictionary, main_node:
 			# ✅ Взлом занимает время
 			if time_system:
 				time_system.add_minutes(15)
+		3: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "ГАРАЖ")
+			if log_system:
+				log_system.add_event_log("Присматриваешь объекты для дела покрупнее...")
 
 # РЫНОК
 func handle_market_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
@@ -229,6 +241,12 @@ func handle_market_action(action_index: int, player_data: Dictionary, main_node:
 			# ✅ Время на новости
 			if time_system:
 				time_system.add_minutes(10)
+		3: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "РЫНОК")
+			if log_system:
+				log_system.add_event_log("Среди толпы на рынке можно провернуть дельце...")
 
 # ПОРТ
 func handle_port_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
@@ -255,7 +273,13 @@ func handle_port_action(action_index: int, player_data: Dictionary, main_node: N
 				log_system.add_event_log(texts[randi() % texts.size()])
 			if time_system:
 				time_system.add_minutes(15)
-		2: # Уйти
+		2: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "ПОРТ")
+			if log_system:
+				log_system.add_event_log("Контейнеры, склады... Портовая зона полна возможностей...")
+		3: # Уйти
 			main_node.close_location_menu()
 
 			if log_system:
@@ -386,6 +410,12 @@ func handle_street_action(action_index: int, player_data: Dictionary, main_node:
 
 			if time_system:
 				time_system.add_minutes(5)
+		3: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "УЛИЦА")
+			if log_system:
+				log_system.add_event_log("На улицах полно возможностей для быстрой наживы...")
 
 # ВОКЗАЛ
 func handle_station_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
@@ -436,6 +466,12 @@ func handle_station_action(action_index: int, player_data: Dictionary, main_node
 				log_system.add_event_log(texts[randi() % texts.size()])
 			if time_system:
 				time_system.add_minutes(5)
+		3: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "ВОКЗАЛ")
+			if log_system:
+				log_system.add_event_log("Вокзал - много людей, много возможностей... Можно поработать.")
 
 # Покупка предмета
 func buy_item(item_name: String, player_data: Dictionary, main_node: Node):
