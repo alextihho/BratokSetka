@@ -344,12 +344,16 @@ func enemy_turn() -> Array:
 		# ✅ ИСПРАВЛЕНИЕ: Испускаем сигнал о завершении боя
 		battle_finished.emit(battle_result["victory"])
 		return actions
-	
+
 	turn = "player"
 	current_attacker_index = 0
 	buttons_locked = false
+
+	# ✅ НОВОЕ: Прокачка навыка вождения DRV если в машине
+	try_increase_driving_skill()
+
 	battle_state_changed.emit("player_turn")
-	
+
 	return actions
 
 # ========== СМЕНА АТАКУЮЩЕГО ==========
@@ -515,3 +519,34 @@ func get_alive_player_count() -> int:
 
 func get_alive_enemy_count() -> int:
 	return count_alive(enemy_team)
+
+# ✅ НОВОЕ: Прокачка навыка вождения водителя при бое в машине
+func try_increase_driving_skill():
+	# Получаем доступ к main_node через parent chain
+	var battle_node = get_parent()  # battle.gd
+	if not battle_node:
+		return
+	
+	var main_node = battle_node.get_parent()  # main.gd
+	if not main_node or not "player_data" in main_node:
+		return
+	
+	var player_data = main_node.player_data
+	
+	# Проверяем есть ли машина и водитель
+	if not player_data.get("in_car", false):
+		return
+	
+	var driver_index = player_data.get("current_driver", -1)
+	
+	# Если водитель - главный игрок (индекс -1)
+	if driver_index == -1:
+		if player_stats:
+			player_stats.add_stat_xp("DRV", 3)  # +3 опыта вождения за раунд боя
+			print("🚗 +3 опыта вождения для ГГ за раунд боя в машине")
+	# Если водитель - член банды
+	elif driver_index >= 0:
+		if "gang_members" in main_node and driver_index < main_node.gang_members.size():
+			var driver = main_node.gang_members[driver_index]
+			# У НПС пока нет навыков DRV, но можно добавить позже
+			print("🚗 Водитель %s получил бы опыт вождения (пока не реализовано для НПС)" % driver.get("name", "НПС"))

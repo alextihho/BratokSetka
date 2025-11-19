@@ -533,7 +533,10 @@ func show_stats_window(member_index: int):
 		stats_text += "❤️ HP: %d / %d\n" % [member.get("hp", 100), member.get("max_hp", 100)]
 		stats_text += "⚔️ Урон: %d\n" % member.get("damage", 10)
 		stats_text += "🛡️ Защита: %d\n" % member.get("defense", 0)
-		stats_text += "🎯 Точность: %d%%\n" % int(member.get("accuracy", 0.65) * 100)
+		# ✅ ИСПРАВЛЕНО: поддержка старого формата accuracy > 1.0 и нового < 1.0
+		var accuracy_val = member.get("accuracy", 0.65)
+		var accuracy_percent = int(accuracy_val * 100) if accuracy_val < 2.0 else int(accuracy_val)
+		stats_text += "🎯 Точность: %d%%\n" % accuracy_percent
 		stats_text += "💪 Мораль: %d\n" % member.get("morale", 80)
 		stats_text += "🔫 Оружие: %s\n\n" % member.get("weapon", "Кулаки")
 

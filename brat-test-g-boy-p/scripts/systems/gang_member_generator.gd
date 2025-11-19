@@ -38,7 +38,7 @@ func generate_random_member(min_level: int = 1, max_level: int = 3) -> Dictionar
 		"max_health": 80 + level * 10,
 		"strength": 5 + level * 2 + randi_range(-1, 2),
 		"agility": 5 + level * 2 + randi_range(-1, 2),
-		"accuracy": 5 + level * 2 + randi_range(-1, 2),
+		"accuracy": 0.50 + (level * 0.05) + randf() * 0.15,  # ✅ ИСПРАВЛЕНО: 0.50-0.90 вместо 5-15
 		"equipment": {
 			"helmet": null,
 			"armor": null,
@@ -76,7 +76,9 @@ func random_starting_armor() -> String:
 func calculate_hire_cost(member: Dictionary) -> int:
 	var base_cost = 200
 	var level_cost = member["level"] * 150
-	var stats_cost = (member["strength"] + member["agility"] + member["accuracy"]) * 10
+	# ✅ ИСПРАВЛЕНО: accuracy теперь 0.5-0.9, конвертируем в проценты для расчета
+	var accuracy_value = int(member["accuracy"] * 100) if member["accuracy"] < 2.0 else member["accuracy"]
+	var stats_cost = (member["strength"] + member["agility"] + accuracy_value) * 10
 	
 	var equipment_bonus = 0
 	if member["equipment"]["melee"] != null:
@@ -94,7 +96,9 @@ func get_member_description(member: Dictionary) -> String:
 	desc += "HP: " + str(member["health"]) + "\n"
 	desc += "💪 Сила: " + str(member["strength"]) + " | "
 	desc += "🤸 Ловкость: " + str(member["agility"]) + " | "
-	desc += "🎯 Меткость: " + str(member["accuracy"]) + "\n"
+	# ✅ ИСПРАВЛЕНО: accuracy в процентах
+	var accuracy_percent = int(member["accuracy"] * 100) if member["accuracy"] < 2.0 else int(member["accuracy"])
+	desc += "🎯 Меткость: " + str(accuracy_percent) + "%\n"
 	
 	if member["equipment"]["melee"] != null:
 		desc += "⚔️ Оружие: " + member["equipment"]["melee"] + "\n"
