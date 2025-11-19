@@ -290,7 +290,7 @@ func create_robbery_card(robbery: Dictionary, robbery_id: String, container: VBo
 		start_btn.add_theme_stylebox_override("hover", style_hover)
 
 		start_btn.pressed.connect(func():
-			start_robbery(robbery_id, main_node, player_data)
+			start_robbery_stepwise(robbery_id, main_node, player_data)
 		)
 	else:
 		# Показать причину недоступности
@@ -637,4 +637,81 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 
 	# Переход к следующему этапу
 	robbery_state["stage"] = 1
-	show_entry_stage(main_node, player_data)
+	# TODO: Доделать остальные этапы
+	# Временно используем старую систему для завершения
+	complete_robbery_stepwise(main_node, player_data)
+
+# ЭТАП 2: Проникновение (TODO)
+func show_entry_stage(main_node: Node, player_data: Dictionary):
+	# TODO: Реализовать этап проникновения
+	pass
+
+# ЭТАП 3: Действие (TODO)
+func show_action_stage(main_node: Node, player_data: Dictionary):
+	# TODO: Реализовать этап действия
+	pass
+
+# ЭТАП 4: Побег (TODO)
+func show_escape_stage(main_node: Node, player_data: Dictionary):
+	# TODO: Реализовать этап побега
+	pass
+
+# Завершить пошаговое ограбление
+func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
+	var robbery = robberies[robbery_state["robbery_id"]]
+
+	# Применяем модификаторы
+	var alarm_chance = robbery["alarm_chance"] + robbery_state["modifiers"]["alarm_chance"]
+	var police_chance = robbery["police_chance"] + robbery_state["modifiers"]["police_chance"]
+	var reward_mult = robbery_state["modifiers"]["reward_mult"]
+	var ua_mult = robbery_state["modifiers"]["ua_mult"]
+
+	# Расчёт результата
+	var caught = false
+	var reward = 0
+
+	# Проверка сигнализации
+	if randf() < alarm_chance:
+		print("🚨 СРАБОТАЛА СИГНАЛИЗАЦИЯ!")
+		if police_system:
+			police_system.add_ua(int(robbery["ua_gain"] * ua_mult), "ограбление с сигнализацией")
+		caught = true
+
+	# Проверка патруля
+	if randf() < police_chance:
+		print("🚔 ПАТРУЛЬ!")
+		if police_system:
+			police_system.add_ua(int(robbery["ua_gain"] * ua_mult * 0.5), "замечен при ограблении")
+		caught = true
+
+	# Награда
+	if not caught:
+		reward = int(randi_range(robbery["min_reward"], robbery["max_reward"]) * reward_mult)
+	else:
+		reward = int(randi_range(robbery["min_reward"], robbery["max_reward"]) * reward_mult * 0.3)
+
+	# XP
+	if player_stats:
+		for stat in robbery["xp_gain"]:
+			player_stats.add_stat_xp(stat, robbery["xp_gain"][stat])
+
+	# Выдать деньги
+	player_data["balance"] += reward
+
+	# Время
+	if time_system:
+		time_system.add_minutes(int(robbery["duration"]))
+
+	# Обновить UI
+	main_node.update_ui()
+
+	# Показать результат
+	var result_text = ""
+	if caught:
+		result_text = "⚠️ Ограбление частично провалено!\n+%d руб., но вас заметили!" % reward
+	else:
+		result_text = "✅ Ограбление успешно!\n+%d руб." % reward
+
+	main_node.show_message(result_text)
+
+	print("🎭 Ограбление завершено: " + robbery["name"] + " | Награда: " + str(reward))
