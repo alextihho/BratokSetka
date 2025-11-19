@@ -53,11 +53,11 @@ func create_ui():
 
 	# ScrollContainer для районов
 	var scroll = ScrollContainer.new()
-	scroll.position = Vector2(20, 260)  # ✅ Поднято выше на 10px
-	scroll.size = Vector2(680, 810)  # ✅ Увеличено до 810px (1070-260=810)
+	scroll.position = Vector2(20, 260)
+	scroll.size = Vector2(680, 550)  # ✅ Уменьшено до 550px чтобы помещалось ~5 районов, остальные по скроллу
 	scroll.name = "DistrictsScroll"
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO  # ✅ Автоскролл
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # ✅ Отключен горизонтальный
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS  # ✅ Всегда показывать скроллбар
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 
 	# VBoxContainer для автоматического размещения
@@ -75,7 +75,7 @@ func create_ui():
 	# Кнопка закрытия
 	var close_btn = Button.new()
 	close_btn.custom_minimum_size = Vector2(680, 50)
-	close_btn.position = Vector2(20, 1070)
+	close_btn.position = Vector2(20, 820)  # ✅ После ScrollContainer (260+550+10)
 	close_btn.text = "ЗАКРЫТЬ"
 	
 	var style_close = StyleBoxFlat.new()

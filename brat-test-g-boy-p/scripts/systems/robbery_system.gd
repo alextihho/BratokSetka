@@ -286,7 +286,7 @@ func can_attempt_robbery(robbery_id: String, player_data: Dictionary) -> Diction
 	if player_stats:
 		for stat in robbery["required_stats"]:
 			var required = robbery["required_stats"][stat]
-			var current = player_stats.get_stat_level(stat)
+			var current = player_stats.get_stat(stat)
 			if current < required:
 				return {"can": false, "reason": "Требуется %s: %d (у вас: %d)" % [stat, required, current]}
 
