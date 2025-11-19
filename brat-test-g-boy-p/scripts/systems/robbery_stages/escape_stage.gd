@@ -46,7 +46,9 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 		y_pos,
 		"🥷 ТИХО УЙТИ",
 		"Незаметно выскользнуть.\n-Шанс встретить патруль, нормальное время",
-		func(): on_escape_selected.call("sneak"),
+		func():
+			stage_menu.queue_free()  # ✅ Закрываем окно побега
+			on_escape_selected.call("sneak"),
 		true
 	)
 	y_pos += 140
@@ -57,7 +59,9 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 		y_pos,
 		"🏃 БЕЖАТЬ",
 		"Быстро свалить, не обращая внимания.\n+Шанс патруля заметить, -Время",
-		func(): on_escape_selected.call("run"),
+		func():
+			stage_menu.queue_free()  # ✅ Закрываем окно побега
+			on_escape_selected.call("run"),
 		true
 	)
 	y_pos += 140
@@ -80,7 +84,9 @@ static func show(main_node: Node, player_data: Dictionary, robbery: Dictionary, 
 		y_pos,
 		"🚗 НА МАШИНЕ",
 		car_desc,
-		func(): on_escape_selected.call("car"),
+		func():
+			stage_menu.queue_free()  # ✅ Закрываем окно побега
+			on_escape_selected.call("car"),
 		can_drive
 	)
 

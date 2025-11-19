@@ -700,7 +700,41 @@ func show_character_info(character_data: Dictionary, is_player_team: bool):
 		stats_text += "🛡️ Защита: %d\n" % character_data["defense"]
 		stats_text += "🎯 Меткость: %.1f\n" % character_data["accuracy"]
 		stats_text += "💪 Мораль: %d\n" % character_data["morale"]
-		stats_text += "🔫 Оружие: %s\n" % character_data.get("weapon", "Кулаки")
+
+		# ✅ НОВОЕ: Показываем оба оружия (ближнего и дальнего боя)
+		var melee_weapon = ""
+		var ranged_weapon = ""
+
+		# Проверяем equipment (для игрока)
+		if character_data.has("equipment"):
+			melee_weapon = character_data["equipment"].get("melee", "")
+			ranged_weapon = character_data["equipment"].get("ranged", "")
+
+		# Fallback на старый формат weapon (для NPC)
+		if melee_weapon == "" and ranged_weapon == "":
+			var weapon = character_data.get("weapon", "")
+			if weapon != "" and weapon != "Кулаки":
+				# Определяем тип оружия по названию (примитивная проверка)
+				if "Пистолет" in weapon or "АК" in weapon or "Дробовик" in weapon or "ПМ" in weapon:
+					ranged_weapon = weapon
+				else:
+					melee_weapon = weapon
+
+		# Показываем оружие
+		if melee_weapon != "" or ranged_weapon != "":
+			stats_text += "\n🔫 Оружие:\n"
+			if melee_weapon != "":
+				stats_text += "   ⚔️ Ближний бой: %s\n" % melee_weapon
+			else:
+				stats_text += "   ⚔️ Ближний бой: Кулаки\n"
+
+			if ranged_weapon != "":
+				stats_text += "   🎯 Дальний бой: %s\n" % ranged_weapon
+			else:
+				stats_text += "   🎯 Дальний бой: Нет\n"
+		else:
+			stats_text += "\n🔫 Оружие: Кулаки\n"
+
 
 	var status_text = battle_logic.get_status_text(character_data)
 	if status_text != "":
@@ -715,11 +749,11 @@ func show_character_info(character_data: Dictionary, is_player_team: bool):
 	if character_data.has("inventory") and character_data["inventory"].size() > 0:
 		var inv_title = Label.new()
 		inv_title.text = "🎒 Инвентарь:"
-		inv_title.position = Vector2(80, 450)
+		inv_title.position = Vector2(80, 550)  # ✅ Увеличено с 450 до 550 для нового блока оружия
 		inv_title.add_theme_font_size_override("font_size", 20)
 		info_window.add_child(inv_title)
-		
-		var y_offset = 490
+
+		var y_offset = 590  # ✅ Увеличено с 490 до 590
 		for item in character_data["inventory"]:
 			var item_label = Label.new()
 			item_label.text = "• " + item
