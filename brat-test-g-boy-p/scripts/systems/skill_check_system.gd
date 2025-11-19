@@ -16,14 +16,30 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 	var tool_level = 0
 
 	if tool_required != null and tool_required != "":
-		has_tool = player_data.get(tool_required, false)
+		# ✅ ФИКС: Проверка конкретных предметов для категорий инструментов
+		if tool_required == "melee_weapon":
+			# Проверяем любое оружие ближнего боя
+			has_tool = player_data.get("knife", false) or player_data.get("bat", false) or player_data.get("crowbar", false)
+			if has_tool:
+				# Определяем уровень самого лучшего оружия
+				if player_data.get("crowbar", false):
+					tool_level = player_data.get("crowbar_level", 2)
+				elif player_data.get("bat", false):
+					tool_level = player_data.get("bat_level", 1)
+				elif player_data.get("knife", false):
+					tool_level = player_data.get("knife_level", 1)
+		elif tool_required == "lockpick":
+			has_tool = player_data.get("lockpick", false)
+			tool_level = player_data.get("lockpick_level", 1)
+		else:
+			# Для других инструментов - стандартная проверка
+			has_tool = player_data.get(tool_required, false)
+			tool_level = player_data.get(tool_required + "_level", 1)
+
 		if not has_tool:
 			result["reason"] = "❌ Требуется: " + get_tool_name(tool_required)
 			result["time_spent"] = 5  # Потратили время на осознание проблемы
 			return result
-
-		# Уровень инструмента
-		tool_level = player_data.get(tool_required + "_level", 1)
 
 	# Получить навык
 	var stat_value = 0
