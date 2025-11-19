@@ -1,6 +1,14 @@
 # robbery_system.gd - Система ограблений
 extends Node
 
+# ✅ ИМПОРТ МОДУЛЕЙ
+const RobberyDefinitions = preload("res://scripts/systems/robbery_stages/robbery_definitions.gd")
+const RobberyGenerator = preload("res://scripts/systems/robbery_stages/robbery_generator.gd")
+const PlanningStage = preload("res://scripts/systems/robbery_stages/planning_stage.gd")
+const EntryStage = preload("res://scripts/systems/robbery_stages/entry_stage.gd")
+const ActionStage = preload("res://scripts/systems/robbery_stages/action_stage.gd")
+const EscapeStage = preload("res://scripts/systems/robbery_stages/escape_stage.gd")
+
 signal robbery_started(robbery_type: String)
 signal robbery_completed(robbery_type: String, reward: int, caught: bool)
 signal robbery_failed(robbery_type: String, reason: String)
@@ -9,79 +17,8 @@ var player_stats
 var police_system
 var time_system
 
-# Типы ограблений (ключи соответствуют локациям)
-var robberies = {
-	"ЛАРЁК": {
-		"name": "Ограбить ларёк",
-		"icon": "🏪",
-		"difficulty": 1,  # 1-5
-		"min_reward": 500,
-		"max_reward": 2000,
-		"duration": 3.0,  # минуты игрового времени
-		"alarm_chance": 0.2,  # 20% шанс сигнализации
-		"police_chance": 0.3,  # 30% шанс патруля
-		"required_stats": {"AGI": 3, "LCK": 2},
-		"ua_gain": 15,  # Прирост УА при обнаружении
-		"description": "Быстрое ограбление ларька. Низкий риск, небольшая награда.",
-		"xp_gain": {"AGI": 5, "LCK": 3, "CHA": 2}
-	},
-	"КВАРТИРА": {
-		"name": "Ограбить квартиру",
-		"icon": "🏠",
-		"difficulty": 2,
-		"min_reward": 1000,
-		"max_reward": 5000,
-		"duration": 5.0,
-		"alarm_chance": 0.35,
-		"police_chance": 0.25,
-		"required_stats": {"AGI": 5, "INT": 4},
-		"ua_gain": 20,
-		"description": "Взлом квартиры. Средний риск и награда.",
-		"xp_gain": {"AGI": 8, "INT": 6, "LCK": 4}
-	},
-	"СКЛАД": {
-		"name": "Ограбить склад",
-		"icon": "🏭",
-		"difficulty": 3,
-		"min_reward": 3000,
-		"max_reward": 10000,
-		"duration": 8.0,
-		"alarm_chance": 0.5,
-		"police_chance": 0.4,
-		"required_stats": {"STR": 6, "AGI": 6, "INT": 5},
-		"ua_gain": 30,
-		"description": "Ограбление склада. Требует силы и ловкости. Высокая награда.",
-		"xp_gain": {"STR": 10, "AGI": 10, "INT": 8, "LCK": 5}
-	},
-	"АВТОСАЛОН": {
-		"name": "Ограбить автосалон",
-		"icon": "🚗",
-		"difficulty": 4,
-		"min_reward": 5000,
-		"max_reward": 20000,
-		"duration": 10.0,
-		"alarm_chance": 0.7,
-		"police_chance": 0.6,
-		"required_stats": {"AGI": 8, "INT": 7, "DRV": 5},
-		"ua_gain": 40,
-		"description": "Кража машины из автосалона. Очень высокий риск!",
-		"xp_gain": {"AGI": 15, "INT": 12, "DRV": 10, "LCK": 6}
-	},
-	"БАНК": {
-		"name": "Ограбить банк",
-		"icon": "🏦",
-		"difficulty": 5,
-		"min_reward": 10000,
-		"max_reward": 50000,
-		"duration": 15.0,
-		"alarm_chance": 0.9,
-		"police_chance": 0.8,
-		"required_stats": {"STR": 10, "AGI": 10, "INT": 10, "CHA": 8},
-		"ua_gain": 60,
-		"description": "Ограбление банка. Экстремальный риск! Требует команды и подготовки.",
-		"xp_gain": {"STR": 20, "AGI": 20, "INT": 20, "CHA": 15, "LCK": 10}
-	}
-}
+# ✅ ИСПОЛЬЗУЕМ ОПРЕДЕЛЕНИЯ ИЗ МОДУЛЯ
+var robberies = RobberyDefinitions.ROBBERIES
 
 var active_robbery = null
 var robbery_timer: Timer = null
@@ -484,132 +421,11 @@ func start_robbery_stepwise(robbery_id: String, main_node: Node, player_data: Di
 	# Начинаем с этапа планирования
 	show_planning_stage(main_node, player_data)
 
-# ЭТАП 1: Планирование
+# ✅ ЭТАП 1: Планирование (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_planning_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
-
-	var stage_menu = CanvasLayer.new()
-	stage_menu.name = "RobberyStageMenu"
-	stage_menu.layer = 150
-	main_node.add_child(stage_menu)
-
-	# Оверлей
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.85)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	stage_menu.add_child(overlay)
-
-	# Фон
-	var bg = ColorRect.new()
-	bg.size = Vector2(680, 1000)
-	bg.position = Vector2(20, 140)
-	bg.color = Color(0.05, 0.05, 0.1, 0.98)
-	stage_menu.add_child(bg)
-
-	# Заголовок
-	var title = Label.new()
-	title.text = robbery["icon"] + " ПЛАНИРОВАНИЕ"
-	title.position = Vector2(200, 160)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0, 1.0))
-	stage_menu.add_child(title)
-
-	# Описание
-	var desc = Label.new()
-	desc.text = "Цель: " + robbery["name"] + "\n" + robbery["description"]
-	desc.position = Vector2(40, 220)
-	desc.add_theme_font_size_override("font_size", 16)
-	desc.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.custom_minimum_size = Vector2(640, 0)
-	stage_menu.add_child(desc)
-
-	# Вопрос
-	var question = Label.new()
-	question.text = "Как вы будете действовать?"
-	question.position = Vector2(220, 300)
-	question.add_theme_font_size_override("font_size", 20)
-	question.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
-	stage_menu.add_child(question)
-
-	var y_pos = 360
-
-	# Вариант 1: Скрытно
-	create_choice_button(stage_menu, y_pos, "🥷 СКРЫТНО",
-		"Тихо, незаметно. Меньше риск, но требует ловкости.\n+Шанс успеха, -Награда, -УА если заметят",
-		func(): on_approach_selected("stealth", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 2: Агрессивно
-	create_choice_button(stage_menu, y_pos, "💪 АГРЕССИВНО",
-		"Быстро и жёстко. Берём всё силой.\n+Награда, -Шанс успеха, +УА",
-		func(): on_approach_selected("aggressive", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 3: Хитростью
-	create_choice_button(stage_menu, y_pos, "🎭 ХИТРОСТЬЮ",
-		"Обман, отвлечение, социальная инженерия.\nСредний риск, зависит от харизмы",
-		func(): on_approach_selected("clever", main_node, player_data))
-	y_pos += 140
-
-	# Кнопка отмены
-	var cancel_btn = Button.new()
-	cancel_btn.custom_minimum_size = Vector2(660, 50)
-	cancel_btn.position = Vector2(30, 1070)
-	cancel_btn.text = "ОТМЕНИТЬ"
-	cancel_btn.add_theme_font_size_override("font_size", 18)
-
-	var style_cancel = StyleBoxFlat.new()
-	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-
-	cancel_btn.pressed.connect(func():
-		stage_menu.queue_free()
-		show_robberies_menu(main_node, player_data)
-	)
-	stage_menu.add_child(cancel_btn)
-
-# Создать кнопку выбора
-func create_choice_button(parent: CanvasLayer, y: int, title: String, desc: String, callback: Callable):
-	var panel = ColorRect.new()
-	panel.size = Vector2(660, 120)
-	panel.position = Vector2(30, y)
-	panel.color = Color(0.15, 0.15, 0.2, 1.0)
-	parent.add_child(panel)
-
-	var btn_title = Label.new()
-	btn_title.text = title
-	btn_title.position = Vector2(50, y + 15)
-	btn_title.add_theme_font_size_override("font_size", 22)
-	btn_title.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
-	parent.add_child(btn_title)
-
-	var btn_desc = Label.new()
-	btn_desc.text = desc
-	btn_desc.position = Vector2(50, y + 50)
-	btn_desc.add_theme_font_size_override("font_size", 14)
-	btn_desc.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8, 1.0))
-	btn_desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	btn_desc.custom_minimum_size = Vector2(600, 0)
-	parent.add_child(btn_desc)
-
-	var btn = Button.new()
-	btn.custom_minimum_size = Vector2(660, 120)
-	btn.position = Vector2(30, y)
-	btn.text = ""
-	btn.add_theme_font_size_override("font_size", 18)
-
-	var style_normal = StyleBoxFlat.new()
-	style_normal.bg_color = Color(0, 0, 0, 0)
-	btn.add_theme_stylebox_override("normal", style_normal)
-
-	var style_hover = StyleBoxFlat.new()
-	style_hover.bg_color = Color(0.25, 0.25, 0.3, 0.8)
-	btn.add_theme_stylebox_override("hover", style_hover)
-
-	btn.pressed.connect(callback)
-	parent.add_child(btn)
+	PlanningStage.show(main_node, player_data, robbery, robbery_state,
+		func(approach): on_approach_selected(approach, main_node, player_data))
 
 # Обработка выбора подхода
 func on_approach_selected(approach: String, main_node: Node, player_data: Dictionary):
@@ -639,137 +455,18 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 	robbery_state["stage"] = 1
 	show_entry_stage(main_node, player_data)
 
-# ЭТАП 2: Проникновение
+# ✅ ЭТАП 2: Проникновение (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_entry_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
-
-	var stage_menu = CanvasLayer.new()
-	stage_menu.name = "RobberyStageMenu"
-	stage_menu.layer = 150
-	main_node.add_child(stage_menu)
-
-	# Оверлей
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.85)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	stage_menu.add_child(overlay)
-
-	# Фон
-	var bg = ColorRect.new()
-	bg.size = Vector2(680, 1000)
-	bg.position = Vector2(20, 140)
-	bg.color = Color(0.05, 0.05, 0.1, 0.98)
-	stage_menu.add_child(bg)
-
-	# Заголовок
-	var title = Label.new()
-	title.text = robbery["icon"] + " ПРОНИКНОВЕНИЕ"
-	title.position = Vector2(180, 160)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color(0.2, 0.8, 1.0, 1.0))
-	stage_menu.add_child(title)
-
-	# Описание
-	var desc = Label.new()
-	desc.text = "Вы подобрались к цели. Как будете проникать внутрь?"
-	desc.position = Vector2(40, 220)
-	desc.add_theme_font_size_override("font_size", 16)
-	desc.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.custom_minimum_size = Vector2(640, 0)
-	stage_menu.add_child(desc)
-
-	# Текущий подход
-	var approach_text = ""
-	match robbery_state["approach"]:
-		"stealth": approach_text = "🥷 Скрытный подход"
-		"aggressive": approach_text = "💪 Агрессивный подход"
-		"clever": approach_text = "🎭 Хитрый подход"
-
-	var approach_label = Label.new()
-	approach_label.text = "Выбранный подход: " + approach_text
-	approach_label.position = Vector2(200, 270)
-	approach_label.add_theme_font_size_override("font_size", 14)
-	approach_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
-	stage_menu.add_child(approach_label)
-
-	var y_pos = 330
-
-	# Вариант 1: Взломать замок
-	var has_lockpick = player_data.get("has_lockpick", false) or player_stats.get_stat("AGI") >= 7
-	create_choice_button(stage_menu, y_pos, "🔓 ВЗЛОМАТЬ ЗАМОК",
-		"Тихо вскрыть замок. Требует навыка или отмычки.\n-Шанс сигнализации" + ("" if has_lockpick else " [ТРЕБУЕТСЯ AGI 7+]"),
-		func(): on_entry_selected("lockpick", main_node, player_data) if has_lockpick else null)
-	if not has_lockpick:
-		# Затемнить кнопку если недоступна
-		var dim_panel = ColorRect.new()
-		dim_panel.size = Vector2(660, 120)
-		dim_panel.position = Vector2(30, y_pos)
-		dim_panel.color = Color(0, 0, 0, 0.6)
-		dim_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-		stage_menu.add_child(dim_panel)
-	y_pos += 140
-
-	# Вариант 2: Через окно
-	create_choice_button(stage_menu, y_pos, "🪟 ЧЕРЕЗ ОКНО",
-		"Пролезть через окно. Быстро, но рискованно.\n+Шанс сигнализации, -Время",
-		func(): on_entry_selected("window", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 3: Договориться
-	var has_charisma = player_stats.get_stat("CHA") >= 6
-	create_choice_button(stage_menu, y_pos, "🗣️ ДОГОВОРИТЬСЯ",
-		"Обмануть охрану или уговорить пустить.\n" + ("Шанс зависит от харизмы" if has_charisma else "Высокий риск провала [ТРЕБУЕТСЯ CHA 6+]"),
-		func(): on_entry_selected("talk", main_node, player_data))
-	if not has_charisma:
-		var dim_panel = ColorRect.new()
-		dim_panel.size = Vector2(660, 120)
-		dim_panel.position = Vector2(30, y_pos)
-		dim_panel.color = Color(0, 0, 0, 0.6)
-		dim_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-		stage_menu.add_child(dim_panel)
-	y_pos += 140
-
-	# Кнопка отмены
-	var cancel_btn = Button.new()
-	cancel_btn.custom_minimum_size = Vector2(660, 50)
-	cancel_btn.position = Vector2(30, 1070)
-	cancel_btn.text = "ОТМЕНИТЬ"
-	cancel_btn.add_theme_font_size_override("font_size", 18)
-
-	var style_cancel = StyleBoxFlat.new()
-	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-
-	cancel_btn.pressed.connect(func():
-		stage_menu.queue_free()
-		show_robberies_menu(main_node, player_data)
-	)
-	stage_menu.add_child(cancel_btn)
+	EntryStage.show(main_node, player_data, robbery, robbery_state,
+		func(entry_method): on_entry_selected(entry_method, main_node, player_data))
 
 # Обработка выбора способа проникновения
 func on_entry_selected(entry_method: String, main_node: Node, player_data: Dictionary):
 	robbery_state["entry_method"] = entry_method
 
-	# Модификаторы в зависимости от способа
-	match entry_method:
-		"lockpick":
-			robbery_state["modifiers"]["alarm_chance"] -= 0.15
-		"window":
-			robbery_state["modifiers"]["alarm_chance"] += 0.1
-			robbery_state["modifiers"]["time_mult"] = 0.8
-		"talk":
-			# Проверка харизмы
-			var cha = player_stats.get_stat("CHA")
-			if cha >= 8:
-				robbery_state["modifiers"]["police_chance"] -= 0.15
-				robbery_state["modifiers"]["alarm_chance"] -= 0.1
-			elif cha >= 6:
-				robbery_state["modifiers"]["police_chance"] -= 0.05
-			else:
-				# Провал разговора
-				robbery_state["modifiers"]["alarm_chance"] += 0.2
+	# ✅ Применяем модификаторы из модуля
+	EntryStage.apply_modifiers(entry_method, robbery_state, player_data)
 
 	# Закрыть текущее меню
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
@@ -780,121 +477,18 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 	robbery_state["stage"] = 2
 	show_action_stage(main_node, player_data)
 
-# ЭТАП 3: Действие (сколько брать)
+# ✅ ЭТАП 3: Действие (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_action_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
-
-	var stage_menu = CanvasLayer.new()
-	stage_menu.name = "RobberyStageMenu"
-	stage_menu.layer = 150
-	main_node.add_child(stage_menu)
-
-	# Оверлей
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.85)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	stage_menu.add_child(overlay)
-
-	# Фон
-	var bg = ColorRect.new()
-	bg.size = Vector2(680, 1000)
-	bg.position = Vector2(20, 140)
-	bg.color = Color(0.05, 0.05, 0.1, 0.98)
-	stage_menu.add_child(bg)
-
-	# Заголовок
-	var title = Label.new()
-	title.text = robbery["icon"] + " ДЕЙСТВИЕ"
-	title.position = Vector2(230, 160)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 1.0))
-	stage_menu.add_child(title)
-
-	# Описание
-	var desc = Label.new()
-	desc.text = "Вы внутри! Сколько времени потратите на сбор ценностей?"
-	desc.position = Vector2(40, 220)
-	desc.add_theme_font_size_override("font_size", 16)
-	desc.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.custom_minimum_size = Vector2(640, 0)
-	stage_menu.add_child(desc)
-
-	# Напоминание о выбранных вариантах
-	var approach_text = ""
-	match robbery_state["approach"]:
-		"stealth": approach_text = "🥷 Скрытно"
-		"aggressive": approach_text = "💪 Агрессивно"
-		"clever": approach_text = "🎭 Хитростью"
-
-	var entry_text = ""
-	match robbery_state["entry_method"]:
-		"lockpick": entry_text = "🔓 Взлом"
-		"window": entry_text = "🪟 Окно"
-		"talk": entry_text = "🗣️ Разговор"
-
-	var choices_label = Label.new()
-	choices_label.text = "Выбор: %s → %s" % [approach_text, entry_text]
-	choices_label.position = Vector2(220, 270)
-	choices_label.add_theme_font_size_override("font_size", 14)
-	choices_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
-	stage_menu.add_child(choices_label)
-
-	var y_pos = 330
-
-	# Вариант 1: Быстро
-	create_choice_button(stage_menu, y_pos, "💨 БЫСТРО",
-		"Берём только самое ценное и уходим.\n+Безопасность, -Награда (60%), -Время",
-		func(): on_action_selected("quick", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 2: Умеренно
-	create_choice_button(stage_menu, y_pos, "⚖️ УМЕРЕННО",
-		"Действуем расчётливо, берём разумное.\nСредняя награда (100%), средний риск",
-		func(): on_action_selected("medium", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 3: Жадно
-	create_choice_button(stage_menu, y_pos, "💰 ЖАДНО",
-		"Берём всё, что можем унести!\n+Награда (150%), +Риск, +Время",
-		func(): on_action_selected("greedy", main_node, player_data))
-	y_pos += 140
-
-	# Кнопка отмены
-	var cancel_btn = Button.new()
-	cancel_btn.custom_minimum_size = Vector2(660, 50)
-	cancel_btn.position = Vector2(30, 1070)
-	cancel_btn.text = "ОТМЕНИТЬ"
-	cancel_btn.add_theme_font_size_override("font_size", 18)
-
-	var style_cancel = StyleBoxFlat.new()
-	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-
-	cancel_btn.pressed.connect(func():
-		stage_menu.queue_free()
-		show_robberies_menu(main_node, player_data)
-	)
-	stage_menu.add_child(cancel_btn)
+	ActionStage.show(main_node, player_data, robbery, robbery_state,
+		func(loot_amount): on_action_selected(loot_amount, main_node, player_data))
 
 # Обработка выбора количества добычи
 func on_action_selected(loot_amount: String, main_node: Node, player_data: Dictionary):
 	robbery_state["loot_amount"] = loot_amount
 
-	# Модификаторы в зависимости от жадности
-	match loot_amount:
-		"quick":
-			robbery_state["modifiers"]["reward_mult"] *= 0.6
-			robbery_state["modifiers"]["alarm_chance"] -= 0.1
-			robbery_state["modifiers"]["time_mult"] *= 0.7
-		"medium":
-			# Без изменений - базовые значения
-			pass
-		"greedy":
-			robbery_state["modifiers"]["reward_mult"] *= 1.5
-			robbery_state["modifiers"]["alarm_chance"] += 0.15
-			robbery_state["modifiers"]["time_mult"] *= 1.3
+	# ✅ Применяем модификаторы из модуля
+	ActionStage.apply_modifiers(loot_amount, robbery_state)
 
 	# Закрыть текущее меню
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
@@ -905,132 +499,18 @@ func on_action_selected(loot_amount: String, main_node: Node, player_data: Dicti
 	robbery_state["stage"] = 3
 	show_escape_stage(main_node, player_data)
 
-# ЭТАП 4: Побег
+# ✅ ЭТАП 4: Побег (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_escape_stage(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
-
-	var stage_menu = CanvasLayer.new()
-	stage_menu.name = "RobberyStageMenu"
-	stage_menu.layer = 150
-	main_node.add_child(stage_menu)
-
-	# Оверлей
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.85)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	stage_menu.add_child(overlay)
-
-	# Фон
-	var bg = ColorRect.new()
-	bg.size = Vector2(680, 1000)
-	bg.position = Vector2(20, 140)
-	bg.color = Color(0.05, 0.05, 0.1, 0.98)
-	stage_menu.add_child(bg)
-
-	# Заголовок
-	var title = Label.new()
-	title.text = robbery["icon"] + " ПОБЕГ"
-	title.position = Vector2(250, 160)
-	title.add_theme_font_size_override("font_size", 30)
-	title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3, 1.0))
-	stage_menu.add_child(title)
-
-	# Описание
-	var desc = Label.new()
-	desc.text = "Добыча взята! Пора сваливать. Как будете уходить?"
-	desc.position = Vector2(40, 220)
-	desc.add_theme_font_size_override("font_size", 16)
-	desc.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-	desc.autowrap_mode = TextServer.AUTOWRAP_WORD
-	desc.custom_minimum_size = Vector2(640, 0)
-	stage_menu.add_child(desc)
-
-	# Напоминание о выбранных вариантах
-	var approach_text = ""
-	match robbery_state["approach"]:
-		"stealth": approach_text = "🥷 Скрытно"
-		"aggressive": approach_text = "💪 Агрессивно"
-		"clever": approach_text = "🎭 Хитростью"
-
-	var entry_text = ""
-	match robbery_state["entry_method"]:
-		"lockpick": entry_text = "🔓 Взлом"
-		"window": entry_text = "🪟 Окно"
-		"talk": entry_text = "🗣️ Разговор"
-
-	var loot_text = ""
-	match robbery_state["loot_amount"]:
-		"quick": loot_text = "💨 Быстро"
-		"medium": loot_text = "⚖️ Умеренно"
-		"greedy": loot_text = "💰 Жадно"
-
-	var choices_label = Label.new()
-	choices_label.text = "Выбор: %s → %s → %s" % [approach_text, entry_text, loot_text]
-	choices_label.position = Vector2(160, 270)
-	choices_label.add_theme_font_size_override("font_size", 14)
-	choices_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7, 1.0))
-	stage_menu.add_child(choices_label)
-
-	var y_pos = 330
-
-	# Вариант 1: Тихо уйти
-	create_choice_button(stage_menu, y_pos, "🥷 ТИХО УЙТИ",
-		"Незаметно выскользнуть.\n-Шанс встретить патруль, нормальное время",
-		func(): on_escape_selected("sneak", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 2: Бежать
-	create_choice_button(stage_menu, y_pos, "🏃 БЕЖАТЬ",
-		"Быстро свалить, не обращая внимания.\n+Шанс патруля заметить, -Время",
-		func(): on_escape_selected("run", main_node, player_data))
-	y_pos += 140
-
-	# Вариант 3: На машине (если есть)
-	var has_car = player_data.get("has_car", false)
-	create_choice_button(stage_menu, y_pos, "🚗 НА МАШИНЕ",
-		"Рвануть на тачке!\n" + ("Очень быстро, +Шум" if has_car else "У вас нет машины! [ТРЕБУЕТСЯ МАШИНА]"),
-		func(): on_escape_selected("car", main_node, player_data) if has_car else null)
-	if not has_car:
-		var dim_panel = ColorRect.new()
-		dim_panel.size = Vector2(660, 120)
-		dim_panel.position = Vector2(30, y_pos)
-		dim_panel.color = Color(0, 0, 0, 0.6)
-		dim_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-		stage_menu.add_child(dim_panel)
-	y_pos += 140
-
-	# Кнопка отмены
-	var cancel_btn = Button.new()
-	cancel_btn.custom_minimum_size = Vector2(660, 50)
-	cancel_btn.position = Vector2(30, 1070)
-	cancel_btn.text = "ОТМЕНИТЬ"
-	cancel_btn.add_theme_font_size_override("font_size", 18)
-
-	var style_cancel = StyleBoxFlat.new()
-	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-
-	cancel_btn.pressed.connect(func():
-		stage_menu.queue_free()
-		show_robberies_menu(main_node, player_data)
-	)
-	stage_menu.add_child(cancel_btn)
+	EscapeStage.show(main_node, player_data, robbery, robbery_state,
+		func(escape_method): on_escape_selected(escape_method, main_node, player_data))
 
 # Обработка выбора способа побега
 func on_escape_selected(escape_method: String, main_node: Node, player_data: Dictionary):
 	robbery_state["escape_method"] = escape_method
 
-	# Модификаторы в зависимости от способа побега
-	match escape_method:
-		"sneak":
-			robbery_state["modifiers"]["police_chance"] -= 0.15
-		"run":
-			robbery_state["modifiers"]["police_chance"] += 0.1
-			robbery_state["modifiers"]["time_mult"] *= 0.8
-		"car":
-			robbery_state["modifiers"]["alarm_chance"] += 0.1
-			robbery_state["modifiers"]["time_mult"] *= 0.6
+	# ✅ Применяем модификаторы из модуля
+	EscapeStage.apply_modifiers(escape_method, robbery_state)
 
 	# ✅ ФИКС: Сначала закрыть меню, потом завершить ограбление
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
@@ -1044,58 +524,9 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 	robbery_state["stage"] = 4
 	complete_robbery_stepwise(main_node, player_data)
 
-# Генерация художественного текста ограбления
+# ✅ Генерация художественного текста (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func generate_robbery_story(robbery: Dictionary, caught: bool, reward: int) -> String:
-	var story = ""
-
-	# Вступление (подход)
-	match robbery_state["approach"]:
-		"stealth":
-			story += "Вы решили действовать тихо и осторожно. "
-		"aggressive":
-			story += "Вы ворвались быстро и агрессивно. "
-		"clever":
-			story += "Вы использовали хитрость и обман. "
-
-	# Проникновение
-	match robbery_state["entry_method"]:
-		"lockpick":
-			story += "Взломали замок за считанные секунды - пальцы работали как часы. "
-		"window":
-			story += "Пролезли через окно, стараясь не шуметь. "
-		"talk":
-			story += "Уговорили охранника пропустить вас внутрь. "
-
-	# Действие
-	match robbery_state["loot_amount"]:
-		"quick":
-			story += "Схватили самое ценное и приготовились уходить. "
-		"medium":
-			story += "Методично собрали всё ценное, что попалось под руку. "
-		"greedy":
-			story += "Жадно набили карманы всем, что можно унести! "
-
-	# Побег
-	match robbery_state["escape_method"]:
-		"sneak":
-			story += "Незаметно выскользнули, растворившись в темноте. "
-		"run":
-			story += "Рванули бегом, не оглядываясь назад! "
-		"car":
-			story += "Запрыгнули в машину и умчались с визгом шин! "
-
-	# Результат
-	if caught:
-		story += "\n\n⚠️ Но что-то пошло не так! Вас заметили. "
-		if randf() < 0.5:
-			story += "Успели смыться с частью добычи (+%d руб.)" % reward
-		else:
-			story += "Пришлось бросить часть награбленного. Всего взяли: %d руб." % reward
-	else:
-		story += "\n\n✅ Всё прошло идеально! "
-		story += "Чистая работа. В кармане теперь %d руб." % reward
-
-	return story
+	return RobberyGenerator.generate_story(robbery_state, robbery, caught, reward)
 
 # Завершить пошаговое ограбление
 func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
