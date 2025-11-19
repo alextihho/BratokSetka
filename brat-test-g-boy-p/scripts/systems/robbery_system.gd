@@ -476,8 +476,11 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 
 	# Проверяем есть ли требования для этого метода проникновения
 	if robbery.has("entry_requirements") and robbery["entry_requirements"].has(entry_method):
+		print("🔍 Проверяем требования для метода: " + entry_method)
 		var req = robbery["entry_requirements"][entry_method]
 		var security = robbery.get("security_level", 1)
+
+		print("📋 Требования: stat=%s, min=%d, tool=%s, security=%d" % [req["stat"], req["min"], str(req["tool"]), security])
 
 		# Делаем проверку навыка
 		var check_result = SkillCheckSystem.check_skill(
@@ -489,6 +492,8 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 			req["tool"]
 		)
 
+		print("✅ Результат проверки: success=%s, reason=%s, xp=%d, time=%d" % [check_result["success"], check_result["reason"], check_result["xp_gained"], check_result["time_spent"]])
+
 		# Начисляем опыт
 		if player_stats and check_result["xp_gained"] > 0:
 			player_stats.add_stat_xp(check_result["stat_used"], check_result["xp_gained"])
@@ -497,21 +502,28 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 		# Добавляем время
 		if time_system and check_result["time_spent"] > 0:
 			time_system.add_minutes(check_result["time_spent"])
+			print("⏰ Потрачено времени: %d минут" % check_result["time_spent"])
 
 		# При провале - показываем сообщение и возвращаемся на этот же этап
 		if not check_result["success"]:
-			main_node.show_message("❌ ПРОВАЛ\n\n" + check_result["reason"] + "\n\n+%d XP %s" % [check_result["xp_gained"], check_result["stat_used"]])
+			print("❌ ПРОВАЛ! Показываем сообщение и возвращаемся")
+			var failure_msg = "❌ ПРОВАЛ\n\n" + check_result["reason"] + "\n\n+%d XP %s\nВремя: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
+			main_node.show_message(failure_msg)
 			main_node.update_ui()
 
+			print("⏳ Ждем 2 секунды перед возвратом на этап проникновения")
 			# Ждем чтобы игрок увидел сообщение
 			await main_node.get_tree().create_timer(2.0).timeout
 
 			# Возвращаемся на этап проникновения
+			print("🔄 Возвращаемся на этап проникновения")
 			show_entry_stage(main_node, player_data)
 			return
 
 		# Успех - показываем сообщение и продолжаем
-		main_node.show_message("✅ УСПЕХ\n\nВы успешно проникли внутрь!\n\n+%d XP %s" % [check_result["xp_gained"], check_result["stat_used"]])
+		print("✅ УСПЕХ! Показываем сообщение и продолжаем")
+		var success_msg = "✅ УСПЕХ\n\nВы успешно проникли внутрь!\n\n+%d XP %s\nВремя: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
+		main_node.show_message(success_msg)
 		main_node.update_ui()
 
 		await main_node.get_tree().create_timer(1.5).timeout
@@ -623,27 +635,9 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	# Обновить UI
 	main_node.update_ui()
 
-	# ✅ НОВОЕ: Художественный текст в лог
-	var log_sys = get_node_or_null("/root/LogSystem")
-	if log_sys:
-		var story = generate_robbery_story(robbery, caught, reward)
-		log_sys.add_event_log(robbery["icon"] + " " + robbery["name"] + "\n" + story)
-
-	# Показать результат
-	var result_text = ""
-	if caught:
-		result_text = "⚠️ Ограбление частично провалено!\n+%d руб., но вас заметили!" % reward
-	else:
-		result_text = "✅ Ограбление успешно!\n+%d руб." % reward
-
-	main_node.show_message(result_text)
-
 	print("🎭 Ограбление завершено: " + robbery["name"] + " | Награда: " + str(reward))
 
-	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем все окна ограблений ПОСЛЕ show_message
-	await main_node.get_tree().process_frame
-	await main_node.get_tree().process_frame
-
+	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем все окна ограблений ДО show_message
 	var old_menu = main_node.get_node_or_null("RobberiesMenu")
 	if old_menu:
 		print("🗑️ Удаляем RobberiesMenu")
@@ -659,6 +653,25 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 		if child.name in ["RobberiesMenu", "RobberyStageMenu"]:
 			print("🗑️ Принудительно удаляем оставшийся узел: " + child.name)
 			child.queue_free()
+
+	# Ждем чтобы окна точно закрылись
+	await main_node.get_tree().process_frame
+	await main_node.get_tree().process_frame
+
+	# ✅ НОВОЕ: Художественный текст в лог
+	var log_sys = get_node_or_null("/root/LogSystem")
+	if log_sys:
+		var story = generate_robbery_story(robbery, caught, reward)
+		log_sys.add_event_log(robbery["icon"] + " " + robbery["name"] + "\n" + story)
+
+	# Показать результат
+	var result_text = ""
+	if caught:
+		result_text = "⚠️ Ограбление частично провалено!\n+%d руб., но вас заметили!" % reward
+	else:
+		result_text = "✅ Ограбление успешно!\n+%d руб." % reward
+
+	main_node.show_message(result_text)
 
 	# ✅ НОВОЕ: Проверка вызова полиции ПОСЛЕ ограбления (100% при УА=100)
 	if police_system and police_system.ua_level >= 100:

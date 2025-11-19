@@ -2,7 +2,7 @@
 extends Node
 
 # Проверка навыка + инструмента vs уровень цели
-static func check_skill(player_data: Dictionary, player_stats, stat_name: String, min_stat: int, security_level: int, tool_required: String = "") -> Dictionary:
+static func check_skill(player_data: Dictionary, player_stats, stat_name: String, min_stat: int, security_level: int, tool_required = null) -> Dictionary:
 	var result = {
 		"success": false,
 		"stat_used": stat_name,
@@ -15,10 +15,10 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 	var has_tool = true
 	var tool_level = 0
 
-	if tool_required and tool_required != "":
+	if tool_required != null and tool_required != "":
 		has_tool = player_data.get(tool_required, false)
 		if not has_tool:
-			result["reason"] = "Требуется: " + get_tool_name(tool_required)
+			result["reason"] = "❌ Требуется: " + get_tool_name(tool_required)
 			result["time_spent"] = 5  # Потратили время на осознание проблемы
 			return result
 
@@ -32,7 +32,7 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 
 	# Проверка минимального требования
 	if stat_value < min_stat:
-		result["reason"] = "Недостаточно навыка %s (нужно %d, у вас %d)" % [stat_name, min_stat, stat_value]
+		result["reason"] = "❌ Недостаточно навыка %s\n\nТребуется: %d\nУ вас: %d" % [stat_name, min_stat, stat_value]
 		result["xp_gained"] = 1  # Немного опыта за попытку
 		result["time_spent"] = randi_range(10, 20)
 		return result
