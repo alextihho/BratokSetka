@@ -34,20 +34,24 @@ func on_time_passed(minutes: int):
 
 # Проверка засады при движении
 func check_ambush_on_move(main_node: Node) -> bool:
-	if ua_level < 30:
-		return false  # Низкий УП - нет засад
+	# ✅ При УА = 100 ВСЕГДА вызываем полицию на текущую локацию
+	if ua_level >= 100:
+		print("🚨 УА ДОСТИГ 100! ПОЛИЦИЯ ВЫЗВАНА НА ВАШУ ЛОКАЦИЮ!")
+		show_surrender_menu(main_node)
+		return true
 
-	# Шанс засады зависит от УП
+	if ua_level < 50:
+		return false  # Низкий УА - нет засад
+
+	# ✅ НОВАЯ СИСТЕМА: Шанс встречи при УА > 50 = 50%, растет до 90% при УА = 100
 	var ambush_chance = 0.0
-	if ua_level >= 70:
-		ambush_chance = 0.15  # 15% при высоком УП
-	elif ua_level >= 50:
-		ambush_chance = 0.08  # 8% при среднем-высоком УП
-	elif ua_level >= 30:
-		ambush_chance = 0.03  # 3% при среднем УП
+	if ua_level >= 50:
+		# Линейная интерполяция от 50% при УА=50 до 90% при УА=100
+		ambush_chance = 0.5 + (ua_level - 50) * (0.4 / 50.0)
+		ambush_chance = clamp(ambush_chance, 0.5, 0.9)
 
 	if randf() < ambush_chance:
-		print("🚔 ЗАСАДА ПОЛИЦИИ!")
+		print("🚔 ЗАСАДА ПОЛИЦИИ! (Шанс: %.0f%%)" % (ambush_chance * 100))
 		show_surrender_menu(main_node)
 		return true
 
@@ -375,9 +379,15 @@ func show_fsb_bribe_menu(main_node: Node):
 		
 		btn.pressed.connect(func():
 			if main_node.player_data["balance"] >= amount:
+				var old_ua = ua_level
 				main_node.player_data["balance"] -= amount
 				reduce_ua(reduce, "взятка в ФСБ")
-				main_node.show_message("💸 Взятка принята. УА снижен на %d" % reduce)
+				var new_ua = ua_level
+				print("💸 ВЗЯТКА ФСБ: Баланс -%d, УА %d → %d (-%d)" % [amount, old_ua, new_ua, reduce])
+				main_node.show_message("💸 Взятка принята. УА снижен %d → %d" % [old_ua, new_ua])
+				main_node.update_ui()
+				# ✅ ФИКС: Дополнительная проверка обновления UI
+				await main_node.get_tree().process_frame
 				main_node.update_ui()
 				fsb_menu.queue_free()
 			else:

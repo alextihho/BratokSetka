@@ -177,6 +177,13 @@ func show_location_menu(location_name: String):
 	menu_open = true
 	print("🏢 Открываем меню: " + location_name)
 
+	# ✅ ПРОВЕРКА НА ВСТРЕЧУ С ПОЛИЦИЕЙ ПРИ ПЕРЕХОДЕ
+	var police_sys = get_node_or_null("/root/PoliceSystem")
+	if police_sys:
+		if police_sys.check_ambush_on_move(self):
+			# Полиция перехватила - не открываем меню локации
+			return
+
 	# ✅ ХУДОЖЕСТВЕННЫЙ текст → в лог
 	add_to_log("📍 Зашли в: " + location_name)
 
@@ -277,8 +284,11 @@ func update_time_ui():
 		return
 
 	if not time_system:
-		print("⚠️ update_time_ui: time_system = null")
-		return
+		# ✅ ФИКС: Попытка загрузить time_system напрямую
+		time_system = get_node_or_null("/root/TimeSystem")
+		if not time_system:
+			print("⚠️ update_time_ui: time_system = null даже после повторной загрузки")
+			return
 
 	var ui_layer = ui_controller.get_ui_layer()
 	if not ui_layer:

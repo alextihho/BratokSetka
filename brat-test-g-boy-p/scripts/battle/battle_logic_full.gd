@@ -218,6 +218,12 @@ func apply_crit_effects(target: Dictionary, effects: Array) -> Array:
 	return applied
 
 func check_fighter_status(fighter: Dictionary, attacker: Dictionary = {}):
+	# ✅ ФИКС: Проверка на Nil
+	if not fighter or fighter.is_empty():
+		return
+	if not fighter.has("hp"):
+		return
+
 	if fighter["hp"] <= 0:
 		var excess_damage = abs(fighter["hp"])
 		var was_alive = fighter.get("alive", true)

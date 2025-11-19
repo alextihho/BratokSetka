@@ -1041,6 +1041,59 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 	robbery_state["stage"] = 4
 	complete_robbery_stepwise(main_node, player_data)
 
+# Генерация художественного текста ограбления
+func generate_robbery_story(robbery: Dictionary, caught: bool, reward: int) -> String:
+	var story = ""
+
+	# Вступление (подход)
+	match robbery_state["approach"]:
+		"stealth":
+			story += "Вы решили действовать тихо и осторожно. "
+		"aggressive":
+			story += "Вы ворвались быстро и агрессивно. "
+		"clever":
+			story += "Вы использовали хитрость и обман. "
+
+	# Проникновение
+	match robbery_state["entry_method"]:
+		"lockpick":
+			story += "Взломали замок за считанные секунды - пальцы работали как часы. "
+		"window":
+			story += "Пролезли через окно, стараясь не шуметь. "
+		"talk":
+			story += "Уговорили охранника пропустить вас внутрь. "
+
+	# Действие
+	match robbery_state["loot_amount"]:
+		"quick":
+			story += "Схватили самое ценное и приготовились уходить. "
+		"medium":
+			story += "Методично собрали всё ценное, что попалось под руку. "
+		"greedy":
+			story += "Жадно набили карманы всем, что можно унести! "
+
+	# Побег
+	match robbery_state["escape_method"]:
+		"sneak":
+			story += "Незаметно выскользнули, растворившись в темноте. "
+		"run":
+			story += "Рванули бегом, не оглядываясь назад! "
+		"car":
+			story += "Запрыгнули в машину и умчались с визгом шин! "
+
+	# Результат
+	if caught:
+		story += "\n\n⚠️ Но что-то пошло не так! Вас заметили. "
+		if randf() < 0.5:
+			story += "Успели смыться с частью добычи (+%d руб.)" % reward
+		else:
+			story += "Пришлось бросить часть награбленного. Всего взяли: %d руб." % reward
+	else:
+		story += "\n\n✅ Всё прошло идеально! "
+		story += "Чистая работа. В кармане теперь %d руб." % reward
+
+	return story
+
 # Завершить пошаговое ограбление
 func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
@@ -1085,10 +1138,16 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 
 	# Время
 	if time_system:
-		time_system.add_minutes(int(robbery["duration"]))
+		time_system.add_minutes(int(robbery["duration"] * robbery_state["modifiers"]["time_mult"]))
 
 	# Обновить UI
 	main_node.update_ui()
+
+	# ✅ НОВОЕ: Художественный текст в лог
+	var log_sys = get_node_or_null("/root/LogSystem")
+	if log_sys:
+		var story = generate_robbery_story(robbery, caught, reward)
+		log_sys.add_event_log(robbery["icon"] + " " + robbery["name"] + "\n" + story)
 
 	# Показать результат
 	var result_text = ""
