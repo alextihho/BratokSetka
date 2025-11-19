@@ -378,12 +378,13 @@ func show_cheats_menu(main_node: Node):
 	y_pos += 40
 
 	# Список навыков
-	var skills = ["STR", "AGI", "INT", "CHA", "STEALTH", "DRV"]
+	var skills = ["STR", "AGI", "INT", "CHA", "LCK", "STEALTH", "DRV"]
 	var skill_names = {
 		"STR": "Сила",
 		"AGI": "Ловкость",
 		"INT": "Интеллект",
 		"CHA": "Харизма",
+		"LCK": "Удача",
 		"STEALTH": "Скрытность",
 		"DRV": "Вождение"
 	}

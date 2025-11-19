@@ -28,6 +28,7 @@ const ROBBERIES = {
 		"name": "Ограбить квартиру",
 		"icon": "🏠",
 		"difficulty": 2,
+		"security_level": 2,
 		"min_reward": 1000,
 		"max_reward": 5000,
 		"duration": 5.0,
@@ -36,12 +37,18 @@ const ROBBERIES = {
 		"required_stats": {"AGI": 5, "INT": 4},
 		"ua_gain": 20,
 		"description": "Взлом квартиры. Средний риск и награда.",
-		"xp_gain": {"AGI": 8, "INT": 6, "LCK": 4}
+		"xp_gain": {"AGI": 8, "INT": 6, "LCK": 4},
+		"entry_requirements": {
+			"lockpick": {"stat": "AGI", "min": 5, "tool": "lockpick"},
+			"window": {"stat": "STR", "min": 4, "tool": "melee_weapon"},
+			"talk": {"stat": "CHA", "min": 6, "tool": null}
+		}
 	},
 	"СКЛАД": {
 		"name": "Ограбить склад",
 		"icon": "🏭",
 		"difficulty": 3,
+		"security_level": 4,
 		"min_reward": 3000,
 		"max_reward": 10000,
 		"duration": 8.0,
@@ -50,12 +57,18 @@ const ROBBERIES = {
 		"required_stats": {"STR": 6, "AGI": 6, "INT": 5},
 		"ua_gain": 30,
 		"description": "Ограбление склада. Требует силы и ловкости. Высокая награда.",
-		"xp_gain": {"STR": 10, "AGI": 10, "INT": 8, "LCK": 5}
+		"xp_gain": {"STR": 10, "AGI": 10, "INT": 8, "LCK": 5},
+		"entry_requirements": {
+			"lockpick": {"stat": "AGI", "min": 7, "tool": "lockpick"},
+			"window": {"stat": "STR", "min": 6, "tool": "crowbar"},  # Требуется лом для прочных окон
+			"talk": {"stat": "CHA", "min": 8, "tool": null}
+		}
 	},
 	"АВТОСАЛОН": {
 		"name": "Ограбить автосалон",
 		"icon": "🚗",
 		"difficulty": 4,
+		"security_level": 6,
 		"min_reward": 5000,
 		"max_reward": 20000,
 		"duration": 10.0,
@@ -64,12 +77,18 @@ const ROBBERIES = {
 		"required_stats": {"AGI": 8, "INT": 7, "DRV": 5},
 		"ua_gain": 40,
 		"description": "Кража машины из автосалона. Очень высокий риск!",
-		"xp_gain": {"AGI": 15, "INT": 12, "DRV": 10, "LCK": 6}
+		"xp_gain": {"AGI": 15, "INT": 12, "DRV": 10, "LCK": 6},
+		"entry_requirements": {
+			"lockpick": {"stat": "AGI", "min": 8, "tool": "lockpick"},
+			"window": {"stat": "STR", "min": 7, "tool": "crowbar"},
+			"talk": {"stat": "CHA", "min": 9, "tool": null}
+		}
 	},
 	"БАНК": {
 		"name": "Ограбить банк",
 		"icon": "🏦",
 		"difficulty": 5,
+		"security_level": 10,
 		"min_reward": 10000,
 		"max_reward": 50000,
 		"duration": 15.0,
@@ -78,7 +97,12 @@ const ROBBERIES = {
 		"required_stats": {"STR": 10, "AGI": 10, "INT": 10, "CHA": 8},
 		"ua_gain": 60,
 		"description": "Ограбление банка. Экстремальный риск! Требует команды и подготовки.",
-		"xp_gain": {"STR": 20, "AGI": 20, "INT": 20, "CHA": 15, "LCK": 10}
+		"xp_gain": {"STR": 20, "AGI": 20, "INT": 20, "CHA": 15, "LCK": 10},
+		"entry_requirements": {
+			"lockpick": {"stat": "AGI", "min": 10, "tool": "lockpick"},
+			"window": {"stat": "STR", "min": 10, "tool": "crowbar"},  # Практически невозможно разбить окно банка
+			"talk": {"stat": "CHA", "min": 12, "tool": null}  # Очень сложно уговорить охрану банка
+		}
 	}
 }
 
