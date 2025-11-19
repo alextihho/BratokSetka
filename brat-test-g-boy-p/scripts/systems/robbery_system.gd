@@ -586,7 +586,8 @@ func on_action_selected(loot_amount: String, main_node: Node, player_data: Dicti
 
 	# ✅ НОВОЕ: Показываем окно результата с художественным текстом
 	var robbery = robberies[robbery_state["robbery_id"]]
-	var action_story = StageStoryGenerator.generate_action_story(loot_amount, robbery["building_type"])
+	var building_type = robbery_state["robbery_id"]
+	var action_story = StageStoryGenerator.generate_action_story(loot_amount, building_type)
 
 	var loot_text = ""
 	match loot_amount:
