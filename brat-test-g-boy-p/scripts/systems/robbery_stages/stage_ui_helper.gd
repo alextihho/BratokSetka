@@ -109,3 +109,75 @@ static func create_cancel_button(parent: CanvasLayer, main_node: Node, player_da
 			robbery_system.show_robberies_menu(main_node, player_data)
 	)
 	parent.add_child(cancel_btn)
+
+# ✅ НОВОЕ: Показать результат прямо в текущем окне этапа
+static func show_result_in_window(main_node: Node, title: String, message: String, is_success: bool, callback: Callable):
+	# Находим текущее окно этапа
+	var stage_menu = main_node.get_node_or_null("RobberyStageMenu")
+	if not stage_menu:
+		print("❌ RobberyStageMenu не найдено!")
+		return
+
+	# Скрываем все кнопки и панели (они начинаются с позиции 330)
+	for child in stage_menu.get_children():
+		if child is Button or (child is ColorRect and child.position.y >= 300):
+			child.visible = false
+		if child is Label and child.position.y >= 300:
+			child.visible = false
+
+	# Добавляем цветную полоску результата
+	var result_header = ColorRect.new()
+	result_header.size = Vector2(660, 80)
+	result_header.position = Vector2(30, 280)
+	if is_success:
+		result_header.color = Color(0.2, 0.8, 0.3, 1.0)  # Зелёный
+	else:
+		result_header.color = Color(0.9, 0.3, 0.2, 1.0)  # Красный
+	stage_menu.add_child(result_header)
+
+	# Заголовок результата
+	var result_title = Label.new()
+	result_title.text = title
+	result_title.position = Vector2(250, 295)
+	result_title.add_theme_font_size_override("font_size", 32)
+	result_title.add_theme_color_override("font_color", Color.WHITE)
+	stage_menu.add_child(result_title)
+
+	# Текст результата
+	var result_text = Label.new()
+	result_text.text = message
+	result_text.position = Vector2(50, 400)
+	result_text.add_theme_font_size_override("font_size", 18)
+	result_text.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
+	result_text.autowrap_mode = TextServer.AUTOWRAP_WORD
+	result_text.custom_minimum_size = Vector2(620, 0)
+	stage_menu.add_child(result_text)
+
+	# Кнопка продолжения
+	var continue_btn = Button.new()
+	continue_btn.custom_minimum_size = Vector2(660, 60)
+	continue_btn.position = Vector2(30, 1050)
+	continue_btn.text = "ПРОДОЛЖИТЬ" if is_success else "ПОПРОБОВАТЬ СНОВА"
+	continue_btn.add_theme_font_size_override("font_size", 24)
+
+	var style_btn = StyleBoxFlat.new()
+	if is_success:
+		style_btn.bg_color = Color(0.2, 0.7, 0.3, 1.0)
+	else:
+		style_btn.bg_color = Color(0.7, 0.3, 0.2, 1.0)
+	continue_btn.add_theme_stylebox_override("normal", style_btn)
+
+	var style_hover = StyleBoxFlat.new()
+	if is_success:
+		style_hover.bg_color = Color(0.3, 0.9, 0.4, 1.0)
+	else:
+		style_hover.bg_color = Color(0.9, 0.4, 0.3, 1.0)
+	continue_btn.add_theme_stylebox_override("hover", style_hover)
+
+	continue_btn.pressed.connect(func():
+		# Закрываем окно этапа
+		stage_menu.queue_free()
+		# Вызываем callback
+		callback.call()
+	)
+	stage_menu.add_child(continue_btn)

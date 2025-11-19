@@ -9,7 +9,7 @@ const EntryStage = preload("res://scripts/systems/robbery_stages/entry_stage.gd"
 const ActionStage = preload("res://scripts/systems/robbery_stages/action_stage.gd")
 const EscapeStage = preload("res://scripts/systems/robbery_stages/escape_stage.gd")
 const SkillCheckSystem = preload("res://scripts/systems/skill_check_system.gd")
-const StageResultUI = preload("res://scripts/systems/robbery_stages/stage_result_ui.gd")
+const StageUIHelper = preload("res://scripts/systems/robbery_stages/stage_ui_helper.gd")
 
 signal robbery_started(robbery_type: String)
 signal robbery_completed(robbery_type: String, reward: int, caught: bool)
@@ -513,7 +513,7 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 			var failure_msg = check_result["reason"] + "\n\n📈 Опыт: +%d %s\n⏰ Время: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
 
 			# ✅ НОВОЕ: Показываем результат в UI ограбления
-			StageResultUI.show_stage_result(
+			StageUIHelper.show_result_in_window(
 				main_node,
 				"❌ ПРОВАЛ",
 				failure_msg,
@@ -531,7 +531,7 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 		var success_msg = "Вы успешно проникли внутрь!\n\n📈 Опыт: +%d %s\n⏰ Время: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
 
 		# ✅ НОВОЕ: Показываем результат в UI ограбления
-		StageResultUI.show_stage_result(
+		StageUIHelper.show_result_in_window(
 			main_node,
 			"✅ УСПЕХ",
 			success_msg,
@@ -580,25 +580,9 @@ func on_escape_selected(escape_method: String, main_node: Node, player_data: Dic
 	# ✅ Применяем модификаторы из модуля
 	EscapeStage.apply_modifiers(escape_method, robbery_state)
 
-	# ✅ ФИКС: Закрываем меню побега
-	var menu = main_node.get_node_or_null("RobberyStageMenu")
-	if menu:
-		print("🗑️ Закрываем RobberyStageMenu (этап побега)")
-		menu.queue_free()
-
-	# Проверяем все CanvasLayer на случай если меню там
-	for child in main_node.get_children():
-		if child is CanvasLayer and child.name == "RobberyStageMenu":
-			print("🗑️ Принудительно удаляем CanvasLayer: RobberyStageMenu")
-			child.queue_free()
-
-	# Ждем следующий кадр чтобы меню точно закрылось
-	await main_node.get_tree().process_frame
-	await main_node.get_tree().process_frame
-
-	# Завершить ограбление
+	# Завершить ограбление (С AWAIT!)
 	robbery_state["stage"] = 4
-	complete_robbery_stepwise(main_node, player_data)
+	await complete_robbery_stepwise(main_node, player_data)
 
 # ✅ Генерация художественного текста (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func generate_robbery_story(robbery: Dictionary, caught: bool, reward: int) -> String:
@@ -661,37 +645,44 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	# Обновить UI
 	main_node.update_ui()
 
-	# ✅ КРИТИЧЕСКИЙ ФИКС: Сначала закрываем ВСЕ окна ограблений
-	print("🗑️ Закрываем все окна ограблений")
-	var old_menu = main_node.get_node_or_null("RobberiesMenu")
-	if old_menu:
-		print("  - Удаляем RobberiesMenu")
-		old_menu.queue_free()
+	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем ВСЕ окна ограблений и меню локации
+	print("🗑️ Закрываем ВСЕ окна ограблений и меню локации")
 
-	var stage_menu = main_node.get_node_or_null("RobberyStageMenu")
-	if stage_menu:
-		print("  - Удаляем RobberyStageMenu")
-		stage_menu.queue_free()
+	# Список всех возможных окон для удаления
+	var windows_to_remove = ["RobberiesMenu", "RobberyStageMenu", "StageResultWindow", "BuildingMenu"]
 
-	var result_menu = main_node.get_node_or_null("StageResultWindow")
-	if result_menu:
-		print("  - Удаляем StageResultWindow")
-		result_menu.queue_free()
+	# Удаляем по имени
+	for window_name in windows_to_remove:
+		var window = main_node.get_node_or_null(window_name)
+		if window:
+			print("  - Удаляем %s" % window_name)
+			window.queue_free()
 
-	# Проверяем все дочерние узлы на наличие окон ограблений
+	# Проверяем все дочерние CanvasLayer
 	for child in main_node.get_children():
-		if child.name in ["RobberiesMenu", "RobberyStageMenu", "StageResultWindow"]:
-			print("  - Принудительно удаляем: " + child.name)
+		if child is CanvasLayer and child.name in windows_to_remove:
+			print("  - Принудительно удаляем CanvasLayer: %s" % child.name)
 			child.queue_free()
 
-	# Ждем чтобы окна точно закрылись
+	# Закрываем меню локации через метод (если есть)
+	if main_node.has_method("close_location_menu"):
+		main_node.close_location_menu()
+		print("  - Вызван close_location_menu()")
+
+	# Ждем несколько фреймов чтобы всё точно закрылось
+	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 
-	print("✅ Все окна ограблений удалены")
+	print("✅ Все окна удалены, возврат на карту")
 
-	# Показываем итоговое сообщение
+	# Сбрасываем active_robbery
+	active_robbery = null
+	robbery_completed.emit(robbery_state["robbery_id"], reward, caught)
+	print("✅ active_robbery сброшен")
+
+	# Показываем итоговое сообщение ПОСЛЕ закрытия всех окон
 	var result_text = ""
 	if caught:
 		result_text = "⚠️ Ограбление частично провалено!\n\n+%d руб., но вас заметили!" % reward
@@ -701,18 +692,8 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	main_node.show_message(result_text)
 	print("💬 Показано итоговое сообщение")
 
-	# ✅ КРИТИЧЕСКИЙ ФИКС: Сбрасываем active_robbery чтобы можно было начать новое ограбление
-	active_robbery = null
-	robbery_completed.emit(robbery_state["robbery_id"], reward, caught)
-	print("✅ Ограбление завершено, active_robbery сброшен")
-
 	# ✅ НОВОЕ: Проверка вызова полиции ПОСЛЕ ограбления (100% при УА=100)
 	if police_system and police_system.ua_level >= 100:
 		# Ждем чуть-чуть чтобы игрок увидел результат
 		await main_node.get_tree().create_timer(1.5).timeout
 		police_system.check_police_after_crime(main_node)
-
-	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем меню локации и возвращаемся на карту
-	if main_node.has_method("close_location_menu"):
-		main_node.close_location_menu()
-		print("✅ Закрыто меню локации, возврат на карту")
