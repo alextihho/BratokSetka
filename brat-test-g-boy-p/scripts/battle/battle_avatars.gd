@@ -618,12 +618,37 @@ func clear_selected_target():
 	clear_all_highlights()
 func flash_damage(fighter_index: int, is_player: bool):
 	var key = ("player" if is_player else "enemy") + "_" + str(fighter_index)
+	if not avatar_nodes.has(key):
+		return
+
 	var avatar = avatar_nodes[key]
-	var icon = avatar.get_node("Icon")
-	
-	icon.modulate = Color(2.0, 0.5, 0.5)  # Красная вспышка
+	var icon = avatar.get_node_or_null("Icon")
+	if not icon:
+		return
+
+	# Красная вспышка
+	icon.modulate = Color(2.0, 0.5, 0.5)
+
+	# Тряска аватара
+	var original_pos = avatar.position
+	shake_avatar(avatar, original_pos)
+
 	await get_tree().create_timer(0.2).timeout
-	icon.modulate = Color(1.0, 1.0, 1.0)  # Возврат
+	icon.modulate = Color(1.0, 1.0, 1.0)  # Возврат цвета
+
+# Тряска аватара при получении урона
+func shake_avatar(avatar: Control, original_pos: Vector2):
+	var shake_iterations = 6
+	var shake_amount = 5.0
+
+	for i in range(shake_iterations):
+		var offset_x = randf_range(-shake_amount, shake_amount)
+		var offset_y = randf_range(-shake_amount, shake_amount)
+		avatar.position = original_pos + Vector2(offset_x, offset_y)
+		await get_tree().create_timer(0.05).timeout
+
+	# Возврат в исходную позицию
+	avatar.position = original_pos
 func show_damage_number(damage: int, pos: Vector2):
 	var label = Label.new()
 	label.text = "-%d" % damage
