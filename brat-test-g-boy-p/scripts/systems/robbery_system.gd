@@ -456,8 +456,7 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 
 	# Переход к следующему этапу
 	robbery_state["stage"] = 1
-	show_entry_stage(main_node, player_data),
-				story
+	show_entry_stage(main_node, player_data)
 
 # ✅ ЭТАП 2: Проникновение (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_entry_stage(main_node: Node, player_data: Dictionary):
