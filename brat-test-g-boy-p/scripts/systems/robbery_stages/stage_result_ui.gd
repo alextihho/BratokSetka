@@ -2,7 +2,7 @@
 extends Node
 
 # Показать результат этапа прямо в окне ограбления
-static func show_stage_result(main_node: Node, title: String, message: String, is_success: bool, callback: Callable, story_text: String = ""):
+static func show_stage_result(main_node: Node, title: String, message: String, is_success: bool, story_text: String, callback: Callable):
 	# Создаем окно результата
 	var result_window = CanvasLayer.new()
 	result_window.name = "StageResultWindow"

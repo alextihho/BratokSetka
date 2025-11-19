@@ -522,11 +522,10 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 				"❌ ПРОВАЛ",
 				failure_msg,
 				false,
+				failure_story,
 				func():
 					print("🔄 Возвращаемся на этап проникновения")
 					show_entry_stage(main_node, player_data)
-				,
-				failure_story
 			)
 			return
 
@@ -545,14 +544,13 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 			"✅ УСПЕХ",
 			success_msg,
 			true,
+			success_story,
 			func():
 				# Применяем модификаторы
 				EntryStage.apply_modifiers(entry_method, robbery_state, player_stats)
 				# Переход к следующему этапу
 				robbery_state["stage"] = 2
 				show_action_stage(main_node, player_data)
-			,
-			success_story
 		)
 		return
 
