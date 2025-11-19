@@ -49,8 +49,34 @@ func create_top_panel():
 	rep_label.name = "RepLabel"
 	add_child(rep_label)
 
+	# Уровень розыска (УП)
+	var wanted_label = Label.new()
+	wanted_label.text = "🚔 0"
+	wanted_label.position = Vector2(580, 20)
+	wanted_label.add_theme_font_size_override("font_size", 18)
+	wanted_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))  # Зеленый по умолчанию
+	wanted_label.name = "WantedLabel"
+	add_child(wanted_label)
+
 func update_ui(player_data, player_stats, game_time):
 	get_node("MoneyLabel").text = "💰 " + str(player_data["balance"]) + " руб"
 	get_node("HealthLabel").text = "♥ " + str(player_stats["health"]) + "/" + str(player_stats["max_health"])
 	get_node("DateLabel").text = "📅 " + game_time.get_date_string()
 	get_node("RepLabel").text = "⭐ " + str(player_stats["reputation"])
+
+	# Обновление уровня розыска
+	var police_system = get_node_or_null("/root/PoliceSystem")
+	if police_system:
+		var ua = police_system.ua_level
+		var wanted_label = get_node("WantedLabel")
+		wanted_label.text = "🚔 " + str(ua)
+
+		# Цвет зависит от уровня
+		if ua == 0:
+			wanted_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))  # Зеленый
+		elif ua < 30:
+			wanted_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.3, 1.0))  # Желтый
+		elif ua < 70:
+			wanted_label.add_theme_color_override("font_color", Color(1.0, 0.6, 0.0, 1.0))  # Оранжевый
+		else:
+			wanted_label.add_theme_color_override("font_color", Color(1.0, 0.2, 0.2, 1.0))  # Красный

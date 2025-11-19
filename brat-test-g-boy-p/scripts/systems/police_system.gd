@@ -7,6 +7,7 @@ signal player_arrested()
 
 var ua_level: int = 0  # Уровень Агрессии (0-100)
 var raids_active: bool = false
+var time_since_last_decay: float = 0.0  # Для естественного снижения УП
 
 # История преступлений (для расчёта наказания)
 var crime_history = {
@@ -19,6 +20,38 @@ var crime_history = {
 
 func _ready():
 	print("🚔 Система полиции загружена (УА: %d)" % ua_level)
+
+# Естественное снижение УП со временем (вызывается из time_system)
+func on_time_passed(minutes: int):
+	time_since_last_decay += minutes
+
+	# Каждые 60 минут (1 час игрового времени) снижаем УП на 1-3
+	while time_since_last_decay >= 60:
+		time_since_last_decay -= 60
+		if ua_level > 0:
+			var decay = randi_range(1, 3)
+			reduce_ua(decay, "естественное снижение")
+
+# Проверка засады при движении
+func check_ambush_on_move(main_node: Node) -> bool:
+	if ua_level < 30:
+		return false  # Низкий УП - нет засад
+
+	# Шанс засады зависит от УП
+	var ambush_chance = 0.0
+	if ua_level >= 70:
+		ambush_chance = 0.15  # 15% при высоком УП
+	elif ua_level >= 50:
+		ambush_chance = 0.08  # 8% при среднем-высоком УП
+	elif ua_level >= 30:
+		ambush_chance = 0.03  # 3% при среднем УП
+
+	if randf() < ambush_chance:
+		print("🚔 ЗАСАДА ПОЛИЦИИ!")
+		show_surrender_menu(main_node)
+		return true
+
+	return false
 
 # ========== УВЕЛИЧЕНИЕ УА ==========
 

@@ -33,6 +33,8 @@ func handle_building_action(location: String, action_index: int, player_data: Di
 			handle_street_action(action_index, player_data, main_node, time_system, police_system)
 		"ВОКЗАЛ":
 			handle_station_action(action_index, player_data, main_node, time_system, police_system)
+		"ФСБ":
+			handle_fsb_action(action_index, player_data, main_node, time_system, police_system)
 	
 	building_action_completed.emit(location, action_index)
 
@@ -472,6 +474,26 @@ func handle_station_action(action_index: int, player_data: Dictionary, main_node
 				robbery_system.show_robberies_menu(main_node, player_data, "ВОКЗАЛ")
 			if log_system:
 				log_system.add_event_log("Вокзал - много людей, много возможностей... Можно поработать.")
+
+# ФСБ
+func handle_fsb_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
+	match action_index:
+		0: # 💰 Дать взятку
+			if police_system:
+				police_system.show_fsb_bribe_menu(main_node)
+			if log_system:
+				var texts = [
+					"Серое здание ФСБ. Охранник кивает, проводит в кабинет. Тут всё решается деньгами.",
+					"Офицер в форме смотрит равнодушно. 'Сколько готов заплатить?' - вот и весь разговор.",
+					"В кабинете пахнет табаком. 'За определённую сумму можем помочь с вашей проблемой', - намекает майор."
+				]
+				log_system.add_event_log(texts[randi() % texts.size()])
+			if time_system:
+				time_system.add_minutes(20)
+		1: # 🚪 Уйти
+			main_node.close_location_menu()
+			if log_system:
+				log_system.add_event_log("Вышел из здания ФСБ. Охранники проводили взглядом.")
 
 # Покупка предмета
 func buy_item(item_name: String, player_data: Dictionary, main_node: Node):
