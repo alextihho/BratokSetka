@@ -9,7 +9,8 @@ const EntryStage = preload("res://scripts/systems/robbery_stages/entry_stage.gd"
 const ActionStage = preload("res://scripts/systems/robbery_stages/action_stage.gd")
 const EscapeStage = preload("res://scripts/systems/robbery_stages/escape_stage.gd")
 const SkillCheckSystem = preload("res://scripts/systems/skill_check_system.gd")
-const StageUIHelper = preload("res://scripts/systems/robbery_stages/stage_ui_helper.gd")
+const StageResultUI = preload("res://scripts/systems/robbery_stages/stage_result_ui.gd")
+const StageStoryGenerator = preload("res://scripts/systems/robbery_stages/stage_story_generator.gd")
 
 signal robbery_started(robbery_type: String)
 signal robbery_completed(robbery_type: String, reward: int, caught: bool)
@@ -455,7 +456,8 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 
 	# Переход к следующему этапу
 	robbery_state["stage"] = 1
-	show_entry_stage(main_node, player_data)
+	show_entry_stage(main_node, player_data),
+				story
 
 # ✅ ЭТАП 2: Проникновение (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_entry_stage(main_node: Node, player_data: Dictionary):
@@ -513,14 +515,17 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 			var failure_msg = check_result["reason"] + "\n\n📈 Опыт: +%d %s\n⏰ Время: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
 
 			# ✅ НОВОЕ: Показываем результат в UI ограбления
-			StageUIHelper.show_result_in_window(
+			StageResultUI.show_stage_result(
+			# ✅ НОВОЕ: Художественный текст провала
+			var story = StageStoryGenerator.generate_entry_story(entry_method, false, check_result["stat_used"])
 				main_node,
 				"❌ ПРОВАЛ",
 				failure_msg,
 				false,
 				func():
 					print("🔄 Возвращаемся на этап проникновения")
-					show_entry_stage(main_node, player_data)
+					show_entry_stage(main_node, player_data),
+				story
 			)
 			return
 
@@ -530,8 +535,10 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 
 		var success_msg = "Вы успешно проникли внутрь!\n\n📈 Опыт: +%d %s\n⏰ Время: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
 
+	# ✅ НОВОЕ: Художественный текст успеха
+	var story = StageStoryGenerator.generate_entry_story(entry_method, true, check_result["stat_used"])
 		# ✅ НОВОЕ: Показываем результат в UI ограбления
-		StageUIHelper.show_result_in_window(
+		StageResultUI.show_stage_result(
 			main_node,
 			"✅ УСПЕХ",
 			success_msg,
@@ -541,7 +548,8 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 				EntryStage.apply_modifiers(entry_method, robbery_state, player_stats)
 				# Переход к следующему этапу
 				robbery_state["stage"] = 2
-				show_action_stage(main_node, player_data)
+				show_action_stage(main_node, player_data),
+			story
 		)
 		return
 

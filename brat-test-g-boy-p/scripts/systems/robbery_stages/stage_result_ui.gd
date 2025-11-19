@@ -2,7 +2,7 @@
 extends Node
 
 # Показать результат этапа прямо в окне ограбления
-static func show_stage_result(main_node: Node, title: String, message: String, is_success: bool, callback: Callable):
+static func show_stage_result(main_node: Node, title: String, message: String, is_success: bool, callback: Callable, story_text: String = ""):
 	# Создаем окно результата
 	var result_window = CanvasLayer.new()
 	result_window.name = "StageResultWindow"
@@ -41,15 +41,26 @@ static func show_stage_result(main_node: Node, title: String, message: String, i
 	title_label.add_theme_color_override("font_color", Color(1, 1, 1, 1))
 	result_window.add_child(title_label)
 
-	# Сообщение
+	# Сообщение (статистика)
 	var msg_label = Label.new()
 	msg_label.text = message
 	msg_label.position = Vector2(80, 480)
-	msg_label.add_theme_font_size_override("font_size", 18)
-	msg_label.add_theme_color_override("font_color", Color(0.95, 0.95, 0.95, 1))
+	msg_label.add_theme_font_size_override("font_size", 16)
+	msg_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1))
 	msg_label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	msg_label.custom_minimum_size = Vector2(560, 0)
+	msg_label.custom_minimum_size = Vector2(540, 0)
 	result_window.add_child(msg_label)
+
+	# Художественный текст (если есть)
+	if story_text != "":
+		var story_label = Label.new()
+		story_label.text = "\n━━━━━━━━━━━━━━━━━━━━\n\n" + story_text
+		story_label.position = Vector2(80, 580)
+		story_label.add_theme_font_size_override("font_size", 15)
+		story_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.6, 1))  # Бежевый оттенок
+		story_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		story_label.custom_minimum_size = Vector2(540, 0)
+		result_window.add_child(story_label)
 
 	# Кнопка продолжить
 	var continue_btn = Button.new()
