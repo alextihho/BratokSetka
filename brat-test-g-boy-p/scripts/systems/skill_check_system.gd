@@ -28,6 +28,10 @@ static func check_skill(player_data: Dictionary, player_stats, stat_name: String
 					tool_level = player_data.get("bat_level", 1)
 				elif player_data.get("knife", false):
 					tool_level = player_data.get("knife_level", 1)
+		elif tool_required == "crowbar":
+			# Лом - специальный инструмент для прочных окон/дверей
+			has_tool = player_data.get("crowbar", false)
+			tool_level = player_data.get("crowbar_level", 2)
 		elif tool_required == "lockpick":
 			has_tool = player_data.get("lockpick", false)
 			tool_level = player_data.get("lockpick_level", 1)
