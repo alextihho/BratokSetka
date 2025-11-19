@@ -8,6 +8,7 @@ const PlanningStage = preload("res://scripts/systems/robbery_stages/planning_sta
 const EntryStage = preload("res://scripts/systems/robbery_stages/entry_stage.gd")
 const ActionStage = preload("res://scripts/systems/robbery_stages/action_stage.gd")
 const EscapeStage = preload("res://scripts/systems/robbery_stages/escape_stage.gd")
+const SkillCheckSystem = preload("res://scripts/systems/skill_check_system.gd")
 
 signal robbery_started(robbery_type: String)
 signal robbery_completed(robbery_type: String, reward: int, caught: bool)
@@ -465,13 +466,58 @@ func show_entry_stage(main_node: Node, player_data: Dictionary):
 func on_entry_selected(entry_method: String, main_node: Node, player_data: Dictionary):
 	robbery_state["entry_method"] = entry_method
 
-	# ✅ Применяем модификаторы из модуля
-	EntryStage.apply_modifiers(entry_method, robbery_state, player_stats)
-
 	# Закрыть текущее меню
 	var menu = main_node.get_node_or_null("RobberyStageMenu")
 	if menu:
 		menu.queue_free()
+
+	# ✅ НОВОЕ: Проверка навыка перед переходом
+	var robbery = robberies[robbery_state["robbery_id"]]
+
+	# Проверяем есть ли требования для этого метода проникновения
+	if robbery.has("entry_requirements") and robbery["entry_requirements"].has(entry_method):
+		var req = robbery["entry_requirements"][entry_method]
+		var security = robbery.get("security_level", 1)
+
+		# Делаем проверку навыка
+		var check_result = SkillCheckSystem.check_skill(
+			player_data,
+			player_stats,
+			req["stat"],
+			req["min"],
+			security,
+			req["tool"]
+		)
+
+		# Начисляем опыт
+		if player_stats and check_result["xp_gained"] > 0:
+			player_stats.add_stat_xp(check_result["stat_used"], check_result["xp_gained"])
+			print("📈 +%d XP к %s" % [check_result["xp_gained"], check_result["stat_used"]])
+
+		# Добавляем время
+		if time_system and check_result["time_spent"] > 0:
+			time_system.add_minutes(check_result["time_spent"])
+
+		# При провале - показываем сообщение и возвращаемся на этот же этап
+		if not check_result["success"]:
+			main_node.show_message("❌ ПРОВАЛ\n\n" + check_result["reason"] + "\n\n+%d XP %s" % [check_result["xp_gained"], check_result["stat_used"]])
+			main_node.update_ui()
+
+			# Ждем чтобы игрок увидел сообщение
+			await main_node.get_tree().create_timer(2.0).timeout
+
+			# Возвращаемся на этап проникновения
+			show_entry_stage(main_node, player_data)
+			return
+
+		# Успех - показываем сообщение и продолжаем
+		main_node.show_message("✅ УСПЕХ\n\nВы успешно проникли внутрь!\n\n+%d XP %s" % [check_result["xp_gained"], check_result["stat_used"]])
+		main_node.update_ui()
+
+		await main_node.get_tree().create_timer(1.5).timeout
+
+	# ✅ Применяем модификаторы из модуля
+	EntryStage.apply_modifiers(entry_method, robbery_state, player_stats)
 
 	# Переход к следующему этапу
 	robbery_state["stage"] = 2
