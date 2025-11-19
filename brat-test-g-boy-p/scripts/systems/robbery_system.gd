@@ -660,29 +660,42 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	# Список всех возможных окон для удаления
 	var windows_to_remove = ["RobberiesMenu", "RobberyStageMenu", "StageResultWindow", "BuildingMenu"]
 
-	# Удаляем по имени
+	# 1. Удаляем по имени
 	for window_name in windows_to_remove:
 		var window = main_node.get_node_or_null(window_name)
 		if window:
-			print("  - Удаляем %s" % window_name)
+			print("  - Удаляем по имени: %s" % window_name)
 			window.queue_free()
 
-	# Проверяем все дочерние CanvasLayer
-	for child in main_node.get_children():
-		if child is CanvasLayer and child.name in windows_to_remove:
-			print("  - Принудительно удаляем CanvasLayer: %s" % child.name)
-			child.queue_free()
+	# 2. ✅ НОВОЕ: Удаляем ВСЕ CanvasLayer с layer >= 150 (окна ограблений)
+	var children_copy = main_node.get_children().duplicate()  # Копия для безопасной итерации
+	for child in children_copy:
+		if child is CanvasLayer:
+			# Проверяем layer - все окна ограблений используют layer 150-160
+			if child.layer >= 150:
+				print("  - Принудительно удаляем CanvasLayer (layer %d): %s" % [child.layer, child.name])
+				child.queue_free()
+			# Также удаляем по имени из списка
+			elif child.name in windows_to_remove:
+				print("  - Принудительно удаляем CanvasLayer по имени: %s" % child.name)
+				child.queue_free()
 
-	# Закрываем меню локации через метод (если есть)
+	# 3. Закрываем меню локации через метод (если есть)
 	if main_node.has_method("close_location_menu"):
 		main_node.close_location_menu()
 		print("  - Вызван close_location_menu()")
 
-	# Ждем несколько фреймов чтобы всё точно закрылось
+	# 4. Ждем несколько фреймов чтобы всё точно закрылось
 	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
 	await main_node.get_tree().process_frame
+
+	# 5. ✅ ФИНАЛЬНАЯ ПРОВЕРКА: Если что-то осталось - удаляем силой
+	for child in main_node.get_children():
+		if child is CanvasLayer and child.layer >= 150:
+			print("  - ⚠️ ФИНАЛЬНАЯ ЗАЧИСТКА: Удаляем оставшийся CanvasLayer: %s" % child.name)
+			child.queue_free()
 
 	print("✅ Все окна удалены, возврат на карту")
 
