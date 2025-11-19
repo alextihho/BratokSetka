@@ -616,7 +616,7 @@ func get_selected_target_index() -> int:
 func clear_selected_target():
 	selected_target_index = -1
 	clear_all_highlights()
-func flash_damage(fighter_index: int, is_player: bool):
+func flash_damage(fighter_index: int, is_player: bool, damage: int = 10):
 	var key = ("player" if is_player else "enemy") + "_" + str(fighter_index)
 	if not avatar_nodes.has(key):
 		return
@@ -626,26 +626,33 @@ func flash_damage(fighter_index: int, is_player: bool):
 	if not icon:
 		return
 
-	# Красная вспышка
-	icon.modulate = Color(2.0, 0.5, 0.5)
+	# Красная вспышка (сильнее при большом уроне)
+	var flash_intensity = min(3.0, 1.5 + damage / 30.0)
+	icon.modulate = Color(flash_intensity, 0.3, 0.3)
 
-	# Тряска аватара
+	# Тряска аватара (сила зависит от урона)
 	var original_pos = avatar.position
-	shake_avatar(avatar, original_pos)
+	shake_avatar(avatar, original_pos, damage)
 
-	await get_tree().create_timer(0.2).timeout
+	await get_tree().create_timer(0.25).timeout
 	icon.modulate = Color(1.0, 1.0, 1.0)  # Возврат цвета
 
-# Тряска аватара при получении урона
-func shake_avatar(avatar: Control, original_pos: Vector2):
-	var shake_iterations = 6
-	var shake_amount = 5.0
+# Тряска аватара при получении урона (сила зависит от урона)
+func shake_avatar(avatar: Control, original_pos: Vector2, damage: int = 10):
+	# ✅ Сила тряски зависит от урона: минимум 3px, максимум 15px
+	var shake_amount = clamp(damage / 3.0, 3.0, 15.0)
+
+	# ✅ Количество итераций зависит от урона: минимум 4, максимум 12
+	var shake_iterations = int(clamp(damage / 5.0 + 4, 4, 12))
+
+	# ✅ Длительность каждой итерации (меньше = быстрее тряска)
+	var iteration_duration = 0.04
 
 	for i in range(shake_iterations):
 		var offset_x = randf_range(-shake_amount, shake_amount)
 		var offset_y = randf_range(-shake_amount, shake_amount)
 		avatar.position = original_pos + Vector2(offset_x, offset_y)
-		await get_tree().create_timer(0.05).timeout
+		await get_tree().create_timer(iteration_duration).timeout
 
 	# Возврат в исходную позицию
 	avatar.position = original_pos

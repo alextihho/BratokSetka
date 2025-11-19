@@ -137,9 +137,34 @@ func perform_attack() -> Dictionary:
 	var final_damage = max(1, damage - target["defense"])
 	target["hp"] -= final_damage
 	result["damage"] = final_damage
-	
-	# ✅ ЛОГ: Успешная атака
+
+	# ✅ АНИМАЦИЯ: Тряска аватара при получении урона
 	var battle = get_parent()
+	if battle and battle.has("battle_avatars"):
+		# Найти индекс цели
+		var target_index = -1
+		var is_player_team = false
+
+		# Ищем в команде игрока
+		for i in range(player_team.size()):
+			if player_team[i] == target:
+				target_index = i
+				is_player_team = true
+				break
+
+		# Если не нашли, ищем в команде врагов
+		if target_index == -1:
+			for i in range(enemy_team.size()):
+				if enemy_team[i] == target:
+					target_index = i
+					is_player_team = false
+					break
+
+		# Вызываем анимацию тряски с учетом урона
+		if target_index != -1:
+			battle.battle_avatars.flash_damage(target_index, is_player_team, final_damage)
+
+	# ✅ ЛОГ: Успешная атака
 	if battle and battle.has_method("add_to_log"):
 		battle.add_to_log("⚔️ %s → %s (%s): -%d HP" % [
 			attacker["name"],
@@ -333,10 +358,35 @@ func enemy_turn() -> Array:
 		var final_damage = max(1, damage - target["defense"])
 		target["hp"] -= final_damage
 		action["damage"] = final_damage
-		
+
+		# ✅ АНИМАЦИЯ: Тряска при групповой атаке
+		var battle = get_parent()
+		if battle and battle.has("battle_avatars"):
+			var target_index = -1
+			var is_player_team = false
+
+			# Ищем в команде игрока
+			for j in range(player_team.size()):
+				if player_team[j] == target:
+					target_index = j
+					is_player_team = true
+					break
+
+			# Если не нашли, ищем в команде врагов
+			if target_index == -1:
+				for j in range(enemy_team.size()):
+					if enemy_team[j] == target:
+						target_index = j
+						is_player_team = false
+						break
+
+			# Вызываем анимацию тряски с учетом урона
+			if target_index != -1:
+				battle.battle_avatars.flash_damage(target_index, is_player_team, final_damage)
+
 		target["morale"] = max(10, target["morale"] - randi_range(3, 10))
 		check_fighter_status(target)
-		
+
 		actions.append(action)
 	
 	var battle_result = check_battle_end()
@@ -428,8 +478,32 @@ func auto_attack_for_gang_member(attacker: Dictionary):
 	target["hp"] -= final_damage
 	target["morale"] = max(10, target["morale"] - randi_range(5, 15))
 
-	# ✅ ЛОГ: Успешная атака члена банды
+	# ✅ АНИМАЦИЯ: Тряска при атаке союзника
 	var battle = get_parent()
+	if battle and battle.has("battle_avatars"):
+		var target_index = -1
+		var is_player_team = false
+
+		# Ищем в команде игрока
+		for i in range(player_team.size()):
+			if player_team[i] == target:
+				target_index = i
+				is_player_team = true
+				break
+
+		# Если не нашли, ищем в команде врагов
+		if target_index == -1:
+			for i in range(enemy_team.size()):
+				if enemy_team[i] == target:
+					target_index = i
+					is_player_team = false
+					break
+
+		# Вызываем анимацию тряски с учетом урона
+		if target_index != -1:
+			battle.battle_avatars.flash_damage(target_index, is_player_team, final_damage)
+
+	# ✅ ЛОГ: Успешная атака члена банды
 	if battle and battle.has_method("add_to_log"):
 		battle.add_to_log("⚔️ %s → %s (%s): -%d HP" % [
 			attacker["name"],

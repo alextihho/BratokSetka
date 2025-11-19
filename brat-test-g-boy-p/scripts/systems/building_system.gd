@@ -37,7 +37,13 @@ func handle_building_action(location: String, action_index: int, player_data: Di
 			handle_fsb_action(action_index, player_data, main_node, time_system, police_system)
 		"БОЛЬНИЦА":
 			handle_hospital_action(action_index, player_data, main_node, time_system, police_system)
-	
+		"АВТОСАЛОН":
+			handle_car_dealership_action(action_index, player_data, main_node, time_system, police_system)
+		"БАНК":
+			handle_bank_action(action_index, player_data, main_node, time_system, police_system)
+		"СКЛАД":
+			handle_warehouse_action(action_index, player_data, main_node, time_system, police_system)
+
 	building_action_completed.emit(location, action_index)
 
 # ЛАРЁК
@@ -929,3 +935,97 @@ func handle_hospital_action(action_index: int, player_data: Dictionary, main_nod
 			main_node.close_location_menu()
 			if log_system:
 				log_system.add_event_log("Вышли из больницы. Пахнет хлоркой и лекарствами.")
+
+# АВТОСАЛОН
+func handle_car_dealership_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
+	var car_system = get_node_or_null("/root/CarSystem")
+	if not car_system:
+		main_node.show_message("❌ Система машин недоступна")
+		return
+
+	match action_index:
+		0: # 🚗 Выбор машины
+			car_system.show_car_dealership(main_node, player_data)
+			if log_system:
+				log_system.add_event_log("Зашли в автосалон. Блестящие машины стоят рядами.")
+			if time_system:
+				time_system.add_minutes(5)
+		1: # 🔧 Починить машину
+			if car_system and "car" in player_data and player_data["car"]:
+				car_system.show_repair_menu(main_node, player_data)
+				if log_system:
+					log_system.add_event_log("Механик осматривает машину: 'Сейчас посмотрим, что тут...'")
+			else:
+				main_node.show_message("❌ У вас нет машины!")
+				if log_system:
+					log_system.add_event_log("Механик пожал плечами: 'Нечего чинить, нет машины'.")
+			if time_system:
+				time_system.add_minutes(5)
+		2: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "АВТОСАЛОН")
+			if log_system:
+				log_system.add_event_log("Присматриваешь дорогие тачки... Можно попробовать угнать...")
+		3: # 🚪 Уйти
+			main_node.close_location_menu()
+			if log_system:
+				log_system.add_event_log("Вышли из автосалона. Охранник проводил взглядом.")
+
+# БАНК
+func handle_bank_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
+	match action_index:
+		0: # 💰 Открыть счет
+			main_node.show_message("💰 Банковские счета пока недоступны")
+			if log_system:
+				var texts = [
+					"Консультант улыбается: 'В наше время лучше держать деньги при себе'.",
+					"Очередь в банке огромная. Бабки с книжками стоят часами.",
+					"Кассир сказал что-то про проценты, но ты не особо понял."
+				]
+				log_system.add_event_log(texts[randi() % texts.size()])
+			if time_system:
+				time_system.add_minutes(15)
+		1: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "БАНК")
+			if log_system:
+				log_system.add_event_log("Охрана, сигнализация, камеры... Ограбить банк - это самоубийство. Или слава?")
+		2: # 🚪 Уйти
+			main_node.close_location_menu()
+			if log_system:
+				log_system.add_event_log("Вышли из банка. Мощное здание, много денег внутри...")
+
+# СКЛАД
+func handle_warehouse_action(action_index: int, player_data: Dictionary, main_node: Node, time_system, police_system):
+	match action_index:
+		0: # 📦 Поискать товары
+			if randf() < 0.3:  # 30% шанс найти что-то
+				var items = ["Инструменты", "Продукты", "Запчасти"]
+				var found = items[randi() % items.size()]
+				player_data["inventory"].append(found)
+				main_node.show_message("✅ Нашли: " + found)
+				if log_system:
+					var texts = [
+						"Покопался в ящиках на складе. Нашёл %s - пригодится!" % found,
+						"Охранник отвлёкся. Стащил %s незаметно." % found,
+						"На складе валяется куча барахла. Взял %s." % found
+					]
+					log_system.add_success_log(texts[randi() % texts.size()])
+			else:
+				main_node.show_message("❌ Ничего полезного не нашли")
+				if log_system:
+					log_system.add_event_log("Обыскал склад, но ничего интересного. Один мусор.")
+			if time_system:
+				time_system.add_minutes(20)
+		1: # 🎭 Ограбления
+			var robbery_system = get_node_or_null("/root/RobberySystem")
+			if robbery_system:
+				robbery_system.show_robberies_menu(main_node, player_data, "СКЛАД")
+			if log_system:
+				log_system.add_event_log("Склад полон товаров. Можно неплохо поживиться...")
+		2: # 🚪 Уйти
+			main_node.close_location_menu()
+			if log_system:
+				log_system.add_event_log("Вышли со склада. Грузчики таскают ящики туда-сюда.")

@@ -94,6 +94,12 @@ func _ready():
 
 # Показать меню ограблений
 func show_robberies_menu(main_node: Node, player_data: Dictionary, location: String = ""):
+	# ✅ ЗАКРЫТЬ МЕНЮ ЛОКАЦИИ
+	var building_menu = main_node.get_node_or_null("BuildingMenu")
+	if building_menu:
+		building_menu.queue_free()
+		await main_node.get_tree().process_frame
+
 	# Закрыть предыдущее меню если есть
 	var old_menu = main_node.get_node_or_null("RobberiesMenu")
 	if old_menu:
@@ -102,7 +108,16 @@ func show_robberies_menu(main_node: Node, player_data: Dictionary, location: Str
 
 	var menu = CanvasLayer.new()
 	menu.name = "RobberiesMenu"
+	menu.layer = 150  # ✅ Поверх логов (layer 40) и UI (layer 50)
 	main_node.add_child(menu)
+
+	# ✅ Оверлей для блокировки кликов
+	var overlay = ColorRect.new()
+	overlay.size = Vector2(720, 1280)
+	overlay.position = Vector2(0, 0)
+	overlay.color = Color(0, 0, 0, 0.7)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	menu.add_child(overlay)
 
 	# Фон
 	var bg = ColorRect.new()
@@ -358,7 +373,7 @@ func show_robbery_progress(robbery: Dictionary, main_node: Node, player_data: Di
 
 	# Симуляция времени
 	if time_system:
-		time_system.advance_time(int(robbery["duration"]))
+		time_system.add_minutes(int(robbery["duration"]))
 
 # Завершить ограбление
 func complete_robbery(robbery_id: String, main_node: Node, player_data: Dictionary):
