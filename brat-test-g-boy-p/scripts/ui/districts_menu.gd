@@ -53,8 +53,8 @@ func create_ui():
 
 	# ScrollContainer для районов
 	var scroll = ScrollContainer.new()
-	scroll.position = Vector2(20, 270)
-	scroll.size = Vector2(680, 800)  # ✅ МАКСИМАЛЬНАЯ высота до кнопки (1070-270=800)
+	scroll.position = Vector2(20, 260)  # ✅ Поднято выше на 10px
+	scroll.size = Vector2(680, 810)  # ✅ Увеличено до 810px (1070-260=810)
 	scroll.name = "DistrictsScroll"
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO  # ✅ Автоскролл
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED  # ✅ Отключен горизонтальный
@@ -63,7 +63,7 @@ func create_ui():
 	# VBoxContainer для автоматического размещения
 	var vbox = VBoxContainer.new()
 	vbox.name = "DistrictsVBox"
-	vbox.add_theme_constant_override("separation", 5)  # ✅ Уменьшено 10→5px для лучшего скроллинга
+	vbox.add_theme_constant_override("separation", 2)  # ✅ Минимальный spacing для экономии места
 	scroll.add_child(vbox)
 
 	# Список районов
@@ -202,13 +202,13 @@ func create_progress_bar(value: int, pos: Vector2):
 # Новая функция для создания карточки внутри ScrollContainer
 func create_district_card_scrollable(district: Dictionary, container: VBoxContainer):
 	var card = Control.new()
-	card.custom_minimum_size = Vector2(660, 130)  # ✅ Уменьшено 160→130px для лучшего скроллинга
+	card.custom_minimum_size = Vector2(660, 110)  # ✅ Уменьшено до 110px для скроллинга
 	card.name = "DistrictCard_" + district["name"]
 	container.add_child(card)
 
 	# Фон карточки
 	var district_bg = ColorRect.new()
-	district_bg.size = Vector2(660, 130)  # ✅ Уменьшено 160→130px
+	district_bg.size = Vector2(660, 110)  # ✅ Уменьшено до 110px
 	district_bg.position = Vector2(0, 0)
 	district_bg.color = district["color"] * 0.3
 	card.add_child(district_bg)
@@ -216,8 +216,8 @@ func create_district_card_scrollable(district: Dictionary, container: VBoxContai
 	# Название района
 	var district_name = Label.new()
 	district_name.text = "📍 " + district["name"]
-	district_name.position = Vector2(10, 10)
-	district_name.add_theme_font_size_override("font_size", 22)
+	district_name.position = Vector2(10, 8)
+	district_name.add_theme_font_size_override("font_size", 20)  # Немного меньше
 	district_name.add_theme_color_override("font_color", Color(1.0, 1.0, 0.3, 1.0))
 	card.add_child(district_name)
 
@@ -230,36 +230,36 @@ func create_district_card_scrollable(district: Dictionary, container: VBoxContai
 		owner_color = Color(1.0, 0.3, 0.3, 1.0)
 
 	owner_label.text = "Владелец: " + district["owner"]
-	owner_label.position = Vector2(10, 40)
-	owner_label.add_theme_font_size_override("font_size", 16)
+	owner_label.position = Vector2(10, 32)
+	owner_label.add_theme_font_size_override("font_size", 14)
 	owner_label.add_theme_color_override("font_color", owner_color)
 	card.add_child(owner_label)
 
 	# Влияние игрока
 	var player_influence = district["influence"].get("Игрок", 0)
 	var influence_label = Label.new()
-	influence_label.text = "Влияние: " + str(player_influence) + "%"  # ✅ Сокращено
-	influence_label.position = Vector2(10, 55)  # ✅ Сдвинуто вверх 65→55
-	influence_label.add_theme_font_size_override("font_size", 14)  # ✅ Меньше шрифт
+	influence_label.text = "Влияние: " + str(player_influence) + "%"
+	influence_label.position = Vector2(10, 47)
+	influence_label.add_theme_font_size_override("font_size", 13)
 	influence_label.add_theme_color_override("font_color", Color(0.8, 0.8, 1.0, 1.0))
 	card.add_child(influence_label)
 
 	# Прогресс-бар влияния
-	create_progress_bar_in_card(player_influence, Vector2(10, 75), card)  # ✅ Сдвинуто вверх 90→75
+	create_progress_bar_in_card(player_influence, Vector2(10, 65), card)
 
 	# Доход
 	var income = districts_system.get_district_income(district["name"], "Игрок")
 	var income_text = Label.new()
-	income_text.text = "💵 Доход: " + str(income) + " руб./д"  # ✅ Сокращено
-	income_text.position = Vector2(10, 100)  # ✅ Сдвинуто вверх 120→100
-	income_text.add_theme_font_size_override("font_size", 13)  # ✅ Меньше шрифт
+	income_text.text = "💵 Доход: " + str(income) + " руб./д"
+	income_text.position = Vector2(10, 87)
+	income_text.add_theme_font_size_override("font_size", 12)
 	income_text.add_theme_color_override("font_color", Color(0.7, 1.0, 0.7, 1.0))
 	card.add_child(income_text)
 
 	# Кнопка подробностей
 	var details_btn = Button.new()
-	details_btn.custom_minimum_size = Vector2(160, 40)  # ✅ Меньше кнопка
-	details_btn.position = Vector2(480, 75)  # ✅ Сдвинуто вверх 100→75
+	details_btn.custom_minimum_size = Vector2(160, 35)  # Еще меньше
+	details_btn.position = Vector2(480, 65)
 	details_btn.text = "ПОДРОБНЕЕ"
 
 	var style_details = StyleBoxFlat.new()
