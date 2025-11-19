@@ -140,7 +140,7 @@ func perform_attack() -> Dictionary:
 
 	# ✅ АНИМАЦИЯ: Тряска аватара при получении урона
 	var battle = get_parent()
-	if battle and battle.has("battle_avatars"):
+	if battle and battle.get("battle_avatars") != null:
 		# Найти индекс цели
 		var target_index = -1
 		var is_player_team = false
@@ -361,7 +361,7 @@ func enemy_turn() -> Array:
 
 		# ✅ АНИМАЦИЯ: Тряска при групповой атаке
 		var battle = get_parent()
-		if battle and battle.has("battle_avatars"):
+		if battle and battle.get("battle_avatars") != null:
 			var target_index = -1
 			var is_player_team = false
 
@@ -480,7 +480,7 @@ func auto_attack_for_gang_member(attacker: Dictionary):
 
 	# ✅ АНИМАЦИЯ: Тряска при атаке союзника
 	var battle = get_parent()
-	if battle and battle.has("battle_avatars"):
+	if battle and battle.get("battle_avatars") != null:
 		var target_index = -1
 		var is_player_team = false
 

@@ -412,7 +412,7 @@ func complete_robbery(robbery_id: String, main_node: Node, player_data: Dictiona
 				player_stats.add_stat_xp(stat, robbery["xp_gain"][stat])
 
 	# Выдать деньги
-	player_data["money"] += reward
+	player_data["balance"] += reward
 
 	# Обновить UI
 	var progress_menu = main_node.get_node_or_null("RobberyProgress")
