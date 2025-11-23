@@ -454,9 +454,33 @@ func on_approach_selected(approach: String, main_node: Node, player_data: Dictio
 	if menu:
 		menu.queue_free()
 
-	# Переход к следующему этапу
-	robbery_state["stage"] = 1
-	show_entry_stage(main_node, player_data)
+	# ✅ НОВОЕ: Показываем окно результата с художественным текстом
+	var approach_text = ""
+	var approach_story = ""
+	match approach:
+		"stealth":
+			approach_text = "🤫 Скрытность"
+			approach_story = "Действуем тихо и незаметно. Никаких лишних рисков. Чем меньше шума — тем лучше."
+		"aggressive":
+			approach_text = "💥 Агрессивность"
+			approach_story = "Время не ждет. Врываемся, берем что нужно, сваливаем. Быстро и дерзко."
+		"clever":
+			approach_text = "🧠 Хитрость"
+			approach_story = "Все продумано. Используем слабости объекта, избегаем ненужного внимания. Мозг важнее мускулов."
+
+	var result_msg = "Выбран подход: %s\n\n📋 План составлен" % approach_text
+
+	StageResultUI.show_stage_result(
+		main_node,
+		"📋 ПЛАНИРОВАНИЕ",
+		result_msg,
+		true,
+		approach_story,
+		func():
+			# После закрытия окна - переход к следующему этапу
+			robbery_state["stage"] = 1
+			show_entry_stage(main_node, player_data)
+	)
 
 # ✅ ЭТАП 2: Проникновение (ИСПОЛЬЗУЕМ МОДУЛЬ)
 func show_entry_stage(main_node: Node, player_data: Dictionary):
@@ -770,20 +794,11 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 
 	print("✅ Побег удался! Завершаем ограбление")
 
-	# ✅ КРИТИЧНО: Закрываем окно результата ПЕРЕД закрытием остальных окон
-	var result_window = main_node.get_node_or_null("StageResultWindow")
-	if result_window:
-		print("  - Закрываем StageResultWindow явно")
-		result_window.queue_free()
-
-	# Ждем фрейм чтобы окно точно удалилось
-	await main_node.get_tree().process_frame
-
 	# Обновить UI
 	main_node.update_ui()
 
 	# ✅ КРИТИЧЕСКИЙ ФИКС: Закрываем ВСЕ окна ограблений и меню локации
-	print("🗑️ Закрываем ВСЕ окна ограблений и меню локации")
+	print("🗑️ Закрываем ВСЕ окна ограблений и меню локации (включая результаты)")
 
 	# Список всех возможных окон для удаления
 	var windows_to_remove = ["RobberiesMenu", "RobberyStageMenu", "StageResultWindow", "BuildingMenu"]
@@ -820,17 +835,26 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	await main_node.get_tree().process_frame
 
 	# 5. ✅ ФИНАЛЬНАЯ ПРОВЕРКА: Если что-то осталось - удаляем силой
+	var remaining_windows = []
 	for child in main_node.get_children():
 		if child is CanvasLayer and child.layer >= 150:
-			print("  - ⚠️ ФИНАЛЬНАЯ ЗАЧИСТКА: Удаляем оставшийся CanvasLayer: %s" % child.name)
+			print("  - ⚠️ ФИНАЛЬНАЯ ЗАЧИСТКА: Удаляем оставшийся CanvasLayer (layer=%d): %s" % [child.layer, child.name])
+			remaining_windows.append(child)
 			child.queue_free()
+
+	# 6. Если были остатки - ждем еще
+	if remaining_windows.size() > 0:
+		print("  - Ожидаем удаления %d оставшихся окон..." % remaining_windows.size())
+		await main_node.get_tree().process_frame
+		await main_node.get_tree().process_frame
 
 	print("✅ Все окна удалены, возврат на карту")
 
-	# Сбрасываем active_robbery
+	# Сбрасываем active_robbery и stage
 	active_robbery = null
+	robbery_state["stage"] = 0  # ✅ ВАЖНО: Сбрасываем стадию чтобы не вернуться к ограблению
 	robbery_completed.emit(robbery_state["robbery_id"], reward, caught)
-	print("✅ active_robbery сброшен")
+	print("✅ active_robbery сброшен, stage=0")
 
 	# Показываем итоговое сообщение ПОСЛЕ закрытия всех окон
 	var result_text = ""
