@@ -4,6 +4,7 @@ signal district_selected(district_name: String)
 signal influence_action(district_name: String, action_type: String)
 signal menu_closed()
 
+var UIHelpers = preload("res://scripts/helpers/ui_helpers.gd")
 var districts_system
 
 func _ready():
@@ -13,25 +14,17 @@ func setup():
 	create_ui()
 
 func create_ui():
-	for child in get_children():
-		child.queue_free()
-	
+	UIHelpers.clear_children(self)
+
 	if not districts_system:
 		print("❌ DistrictsSystem не найдена!")
 		return
-	
-	var bg = ColorRect.new()
-	bg.size = Vector2(700, 1100)
-	bg.position = Vector2(10, 140)
-	bg.color = Color(0.05, 0.05, 0.05, 0.95)
+
+	var bg = UIHelpers.create_panel_bg(Vector2(700, 1100), Vector2(10, 140))
 	bg.name = "DistrictsBG"
 	add_child(bg)
-	
-	var title = Label.new()
-	title.text = "🏙️ РАЙОНЫ ТВЕРИ"
-	title.position = Vector2(240, 160)
-	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+
+	var title = UIHelpers.create_title("🏙️ РАЙОНЫ ТВЕРИ", Vector2(240, 160), 28)
 	add_child(title)
 	
 	# Общая информация
@@ -52,12 +45,9 @@ func create_ui():
 	add_child(hint)
 
 	# ScrollContainer для районов
-	var scroll = ScrollContainer.new()
-	scroll.position = Vector2(20, 260)
-	scroll.size = Vector2(680, 550)  # ✅ Уменьшено до 550px чтобы помещалось ~5 районов, остальные по скроллу
+	var scroll = UIHelpers.create_scroll_container(Vector2(20, 260), Vector2(680, 550))
 	scroll.name = "DistrictsScroll"
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS  # ✅ Всегда показывать скроллбар
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	add_child(scroll)
 
 	# VBoxContainer для автоматического размещения
@@ -73,25 +63,11 @@ func create_ui():
 		create_district_card_scrollable(district, vbox)
 	
 	# Кнопка закрытия
-	var close_btn = Button.new()
-	close_btn.custom_minimum_size = Vector2(680, 50)
-	close_btn.position = Vector2(20, 820)  # ✅ После ScrollContainer (260+550+10)
-	close_btn.text = "ЗАКРЫТЬ"
-	
-	var style_close = StyleBoxFlat.new()
-	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	close_btn.add_theme_stylebox_override("normal", style_close)
-	
-	var style_close_hover = StyleBoxFlat.new()
-	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
-	close_btn.add_theme_stylebox_override("hover", style_close_hover)
-	
-	close_btn.add_theme_font_size_override("font_size", 20)
+	var close_btn = UIHelpers.create_close_button("ЗАКРЫТЬ", Vector2(20, 820), Vector2(680, 50))
 	close_btn.pressed.connect(func():
 		menu_closed.emit()
 		queue_free()
 	)
-	
 	add_child(close_btn)
 
 func create_district_card(district: Dictionary, y_pos: int):
