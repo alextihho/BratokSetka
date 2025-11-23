@@ -102,6 +102,7 @@ static func create_blue_button(text: String, pos: Vector2, size: Vector2 = Vecto
 static func create_scroll_container(pos: Vector2, size: Vector2) -> ScrollContainer:
 	var scroll = ScrollContainer.new()
 	scroll.position = pos
+	scroll.size = size  # ✅ ВАЖНО: Устанавливаем size для правильного скроллинга
 	scroll.custom_minimum_size = size
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
