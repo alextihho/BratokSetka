@@ -571,8 +571,9 @@ func check_entry_skill(entry_method: String, main_node: Node, player_data: Dicti
 
 		var success_msg = "Вы успешно проникли внутрь!\n\n📈 Опыт: +%d %s\n⏰ Время: +%d мин" % [check_result["xp_gained"], check_result["stat_used"], check_result["time_spent"]]
 
-		# ✅ НОВОЕ: Художественный текст успеха
-		var success_story = StageStoryGenerator.generate_entry_story(entry_method, true, check_result["stat_used"])
+		# ✅ НОВОЕ: Художественный текст успеха с типом здания
+		var building_type = robbery_state["robbery_id"]
+		var success_story = StageStoryGenerator.generate_entry_story_with_building(entry_method, true, check_result["stat_used"], building_type)
 
 		# ✅ НОВОЕ: Показываем результат в UI ограбления
 		StageResultUI.show_stage_result(
@@ -768,6 +769,15 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 		return  # ✅ ВАЖНО: Выходим из функции, НЕ закрываем окна!
 
 	print("✅ Побег удался! Завершаем ограбление")
+
+	# ✅ КРИТИЧНО: Закрываем окно результата ПЕРЕД закрытием остальных окон
+	var result_window = main_node.get_node_or_null("StageResultWindow")
+	if result_window:
+		print("  - Закрываем StageResultWindow явно")
+		result_window.queue_free()
+
+	# Ждем фрейм чтобы окно точно удалилось
+	await main_node.get_tree().process_frame
 
 	# Обновить UI
 	main_node.update_ui()
