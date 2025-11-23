@@ -479,7 +479,37 @@ func on_entry_selected(entry_method: String, main_node: Node, player_data: Dicti
 	if menu:
 		menu.queue_free()
 
-	# ✅ НОВОЕ: Проверка навыка перед переходом
+	# ✅ НОВОЕ: Показываем окно с выбранным методом
+	var robbery = robberies[robbery_state["robbery_id"]]
+
+	var method_text = ""
+	var entry_story = ""
+	match entry_method:
+		"stealth":
+			method_text = "🤫 Тихо"
+			entry_story = "Действуете осторожно и незаметно. Каждый шаг выверен."
+		"force":
+			method_text = "💥 Силой"
+			entry_story = "Прямолинейно и быстро. Никаких церемоний."
+		"tech":
+			method_text = "🔧 Техникой"
+			entry_story = "Используете инструменты и навыки. Профессиональный подход."
+
+	var result_msg = "Выбран метод: %s\n\n⏰ Начинаем проникновение..." % method_text
+
+	StageResultUI.show_stage_result(
+		main_node,
+		"🚪 ПРОНИКНОВЕНИЕ",
+		result_msg,
+		true,
+		entry_story,
+		func():
+			# После закрытия окна - проверяем навык
+			check_entry_skill(entry_method, main_node, player_data)
+	)
+
+# Проверка навыка для проникновения (вынесено в отдельную функцию)
+func check_entry_skill(entry_method: String, main_node: Node, player_data: Dictionary):
 	var robbery = robberies[robbery_state["robbery_id"]]
 
 	# Проверяем есть ли требования для этого метода проникновения
@@ -704,6 +734,9 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 	else:
 		escape_result_msg = "Вас заметили!\n\n💰 Награда: +%d руб. (урезана)\n⚠️ УА повышено" % reward
 
+	# ✅ НОВОЕ: Создаем сигнал для ожидания закрытия окна
+	var window_closed = false
+
 	# Показываем окно результата
 	StageResultUI.show_stage_result(
 		main_node,
@@ -712,11 +745,29 @@ func complete_robbery_stepwise(main_node: Node, player_data: Dictionary):
 		not caught,
 		escape_story,
 		func():
-			print("💬 Закрываем окно результата побега, продолжаем завершение")
+			print("💬 Игрок нажал кнопку, закрываем окно результата")
+			window_closed = true
 	)
 
-	# Ждем пока игрок закроет окно результата
-	await main_node.get_tree().create_timer(0.5).timeout
+	# ✅ КРИТИЧНО: Ждем пока игрок нажмет кнопку (а не просто таймер!)
+	while not window_closed:
+		await main_node.get_tree().process_frame
+
+	print("✅ Окно закрыто игроком, caught=%s" % str(caught))
+
+	# ✅ НОВОЕ: Если поймали - возвращаемся к этапу побега для повторной попытки
+	if caught:
+		print("❌ Побег провален! Возвращаемся к выбору метода побега")
+		# Закрываем окно результата если еще не закрыто
+		var result_window = main_node.get_node_or_null("StageResultWindow")
+		if result_window:
+			result_window.queue_free()
+		# Возвращаемся к этапу побега
+		robbery_state["stage"] = 3
+		show_escape_stage(main_node, player_data)
+		return  # ✅ ВАЖНО: Выходим из функции, НЕ закрываем окна!
+
+	print("✅ Побег удался! Завершаем ограбление")
 
 	# Обновить UI
 	main_node.update_ui()
