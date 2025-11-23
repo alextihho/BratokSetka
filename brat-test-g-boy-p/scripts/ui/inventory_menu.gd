@@ -5,6 +5,8 @@ signal back_to_gang
 signal item_clicked(item_name: String, from_pocket: bool, pocket_index: int)
 signal equip_requested(item_name: String)
 
+var UIHelpers = preload("res://scripts/helpers/ui_helpers.gd")
+var PlayerDataHelper = preload("res://scripts/helpers/player_data_helper.gd")
 var items_db
 var player_data
 var current_member_index = 0
@@ -23,9 +25,9 @@ func setup(p_data, member_index: int, p_gang_members: Array):
 	if current_member_index == 0:
 		# Инвентарь игрока
 		if not player_data.has("pockets"):
-			player_data["pockets"] = [null, null, null]
+			player_data["pockets"] = PlayerDataHelper.create_empty_pockets()
 		if not player_data.has("equipment"):
-			player_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+			player_data["equipment"] = PlayerDataHelper.create_empty_equipment()
 		if not player_data.has("inventory"):
 			player_data["inventory"] = []
 	else:
@@ -33,9 +35,9 @@ func setup(p_data, member_index: int, p_gang_members: Array):
 		if gang_members.size() > current_member_index:
 			var member = gang_members[current_member_index]
 			if not member.has("pockets"):
-				member["pockets"] = [null, null, null]
+				member["pockets"] = PlayerDataHelper.create_empty_pockets()
 			if not member.has("equipment"):
-				member["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+				member["equipment"] = PlayerDataHelper.create_empty_equipment()
 			if not member.has("inventory"):
 				member["inventory"] = []
 
@@ -51,33 +53,20 @@ func get_current_data() -> Dictionary:
 		return player_data  # Fallback
 
 func create_ui():
-	for child in get_children():
-		child.queue_free()
-	
-	# ✅ Overlay для блокировки кликов
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.position = Vector2(0, 0)
-	overlay.color = Color(0, 0, 0, 0.7)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	UIHelpers.clear_children(self)
+
+	var overlay = UIHelpers.create_overlay(0.7)
 	add_child(overlay)
-	
-	var bg = ColorRect.new()
-	bg.size = Vector2(700, 1060)
-	bg.position = Vector2(10, 140)
-	bg.color = Color(0.05, 0.05, 0.05, 0.95)
+
+	var bg = UIHelpers.create_panel_bg(Vector2(700, 1060), Vector2(10, 140))
 	bg.name = "InventoryBG"
 	add_child(bg)
-	
+
 	var member_name = "ИНВЕНТАРЬ"
 	if gang_members.size() > current_member_index:
 		member_name = gang_members[current_member_index]["name"] + " - ИНВЕНТАРЬ"
-	
-	var title = Label.new()
-	title.text = member_name
-	title.position = Vector2(200, 160)
-	title.add_theme_font_size_override("font_size", 26)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+
+	var title = UIHelpers.create_title(member_name, Vector2(200, 160), 26)
 	add_child(title)
 
 	# ✅ НОВОЕ: HP машины для ГГ
@@ -99,11 +88,7 @@ func create_ui():
 		add_child(car_hp_label)
 
 	# ✅ НОВОЕ: ScrollContainer для контента инвентаря
-	var scroll_container = ScrollContainer.new()
-	scroll_container.custom_minimum_size = Vector2(700, 940)  # Высота до кнопки закрытия
-	scroll_container.position = Vector2(10, 200)
-	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var scroll_container = UIHelpers.create_scroll_container(Vector2(10, 200), Vector2(700, 940))
 	add_child(scroll_container)
 
 	# ✅ Control для контента
@@ -148,21 +133,8 @@ func create_ui():
 
 		# ✅ НОВОЕ: Кнопка "СНЯТЬ" для экипированных предметов
 		if equipped_item:
-			var unequip_btn = Button.new()
-			unequip_btn.custom_minimum_size = Vector2(120, 40)
-			unequip_btn.position = Vector2(560, equip_y + 5)
-			unequip_btn.text = "СНЯТЬ"
+			var unequip_btn = UIHelpers.create_button("СНЯТЬ", Vector2(560, equip_y + 5), Vector2(120, 40), Color(0.6, 0.3, 0.3, 1.0), Color(0.7, 0.4, 0.4, 1.0), 16)
 			unequip_btn.name = "UnequipBtn_" + slot_key
-
-			var style_unequip = StyleBoxFlat.new()
-			style_unequip.bg_color = Color(0.6, 0.3, 0.3, 1.0)
-			unequip_btn.add_theme_stylebox_override("normal", style_unequip)
-
-			var style_unequip_hover = StyleBoxFlat.new()
-			style_unequip_hover.bg_color = Color(0.7, 0.4, 0.4, 1.0)
-			unequip_btn.add_theme_stylebox_override("hover", style_unequip_hover)
-
-			unequip_btn.add_theme_font_size_override("font_size", 16)
 
 			var eq_slot_key = slot_key  # Capture для callback
 			unequip_btn.pressed.connect(func():
@@ -209,20 +181,8 @@ func create_ui():
 		scroll_content.add_child(pocket_label)
 		
 		if pocket_item:
-			var pocket_btn = Button.new()
-			pocket_btn.custom_minimum_size = Vector2(120, 40)
-			pocket_btn.position = Vector2(560, equip_y + 5)
-			pocket_btn.text = "Действия"
+			var pocket_btn = UIHelpers.create_action_button("Действия", Vector2(560, equip_y + 5), Vector2(120, 40))
 			pocket_btn.name = "PocketBtn_" + str(i)
-			
-			var style_pocket = StyleBoxFlat.new()
-			style_pocket.bg_color = Color(0.3, 0.5, 0.3, 1.0)
-			pocket_btn.add_theme_stylebox_override("normal", style_pocket)
-			
-			var style_pocket_hover = StyleBoxFlat.new()
-			style_pocket_hover.bg_color = Color(0.4, 0.6, 0.4, 1.0)
-			pocket_btn.add_theme_stylebox_override("hover", style_pocket_hover)
-			
 			pocket_btn.add_theme_font_size_override("font_size", 16)
 			
 			var pocket_idx = i
@@ -278,19 +238,7 @@ func create_ui():
 		equip_y += 60
 
 		# Кнопка "ВЫБРАТЬ ВОДИТЕЛЯ"
-		var driver_btn = Button.new()
-		driver_btn.custom_minimum_size = Vector2(330, 50)
-		driver_btn.position = Vector2(10, equip_y)
-		driver_btn.text = "👤 ВЫБРАТЬ ВОДИТЕЛЯ"
-
-		var style_driver = StyleBoxFlat.new()
-		style_driver.bg_color = Color(0.4, 0.6, 0.4, 1.0)
-		driver_btn.add_theme_stylebox_override("normal", style_driver)
-
-		var style_driver_hover = StyleBoxFlat.new()
-		style_driver_hover.bg_color = Color(0.5, 0.7, 0.5, 1.0)
-		driver_btn.add_theme_stylebox_override("hover", style_driver_hover)
-
+		var driver_btn = UIHelpers.create_action_button("👤 ВЫБРАТЬ ВОДИТЕЛЯ", Vector2(10, equip_y), Vector2(330, 50))
 		driver_btn.add_theme_font_size_override("font_size", 18)
 		driver_btn.pressed.connect(func():
 			if car_system:
@@ -300,23 +248,13 @@ func create_ui():
 		scroll_content.add_child(driver_btn)
 
 		# Кнопка "СЕСТЬ/ВЫЙТИ"
-		var toggle_car_btn = Button.new()
-		toggle_car_btn.custom_minimum_size = Vector2(330, 50)
-		toggle_car_btn.position = Vector2(370, equip_y)
-
 		var in_car = player_data.get("in_car", false)
+		var toggle_car_btn: Button
 		if in_car:
-			toggle_car_btn.text = "🚶 ВЫЙТИ ИЗ МАШИНЫ"
-			var style_exit = StyleBoxFlat.new()
-			style_exit.bg_color = Color(0.6, 0.4, 0.2, 1.0)
-			toggle_car_btn.add_theme_stylebox_override("normal", style_exit)
+			toggle_car_btn = UIHelpers.create_button("🚶 ВЫЙТИ ИЗ МАШИНЫ", Vector2(370, equip_y), Vector2(330, 50), Color(0.6, 0.4, 0.2, 1.0), Color.TRANSPARENT, 18)
 		else:
-			toggle_car_btn.text = "🚗 СЕСТЬ В МАШИНУ"
-			var style_enter = StyleBoxFlat.new()
-			style_enter.bg_color = Color(0.3, 0.5, 0.7, 1.0)
-			toggle_car_btn.add_theme_stylebox_override("normal", style_enter)
-
-		toggle_car_btn.add_theme_font_size_override("font_size", 18)
+			toggle_car_btn = UIHelpers.create_blue_button("🚗 СЕСТЬ В МАШИНУ", Vector2(370, equip_y), Vector2(330, 50))
+			toggle_car_btn.add_theme_font_size_override("font_size", 18)
 		toggle_car_btn.pressed.connect(func():
 			player_data["in_car"] = not player_data.get("in_car", false)
 			if player_data["in_car"]:
@@ -363,21 +301,8 @@ func create_ui():
 			item_label.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
 			scroll_content.add_child(item_label)
 			
-			var action_btn = Button.new()
-			action_btn.custom_minimum_size = Vector2(120, 35)
-			action_btn.position = Vector2(560, equip_y + 5)
-			action_btn.text = "Действия"
+			var action_btn = UIHelpers.create_button("Действия", Vector2(560, equip_y + 5), Vector2(120, 35), Color(0.3, 0.4, 0.5, 1.0), Color(0.4, 0.5, 0.6, 1.0), 16)
 			action_btn.name = "ActionBtn_" + str(i)
-			
-			var style_action = StyleBoxFlat.new()
-			style_action.bg_color = Color(0.3, 0.4, 0.5, 1.0)
-			action_btn.add_theme_stylebox_override("normal", style_action)
-			
-			var style_action_hover = StyleBoxFlat.new()
-			style_action_hover.bg_color = Color(0.4, 0.5, 0.6, 1.0)
-			action_btn.add_theme_stylebox_override("hover", style_action_hover)
-			
-			action_btn.add_theme_font_size_override("font_size", 16)
 			
 			var item_name = item
 			action_btn.pressed.connect(func():
@@ -390,60 +315,21 @@ func create_ui():
 	# ✅ НОВОЕ: Устанавливаем высоту контента
 	scroll_content.custom_minimum_size.y = equip_y + 20
 
-	var stats_btn = Button.new()
-	stats_btn.custom_minimum_size = Vector2(210, 50)
-	stats_btn.position = Vector2(20, 1110)
-	stats_btn.text = "📊 СТАТЫ"
+	var stats_btn = UIHelpers.create_button("📊 СТАТЫ", Vector2(20, 1110), Vector2(210, 50), Color(0.2, 0.3, 0.5, 1.0), Color(0.3, 0.4, 0.6, 1.0), 20)
 	stats_btn.name = "StatsButton"
-	
-	var style_stats = StyleBoxFlat.new()
-	style_stats.bg_color = Color(0.2, 0.3, 0.5, 1.0)
-	stats_btn.add_theme_stylebox_override("normal", style_stats)
-	
-	var style_stats_hover = StyleBoxFlat.new()
-	style_stats_hover.bg_color = Color(0.3, 0.4, 0.6, 1.0)
-	stats_btn.add_theme_stylebox_override("hover", style_stats_hover)
-	
-	stats_btn.add_theme_font_size_override("font_size", 20)
 	stats_btn.pressed.connect(func(): show_stats_window())
 	add_child(stats_btn)
 	
-	var back_btn = Button.new()
-	back_btn.custom_minimum_size = Vector2(210, 50)
-	back_btn.position = Vector2(245, 1110)
-	back_btn.text = "← БАНДА"
+	var back_btn = UIHelpers.create_button("← БАНДА", Vector2(245, 1110), Vector2(210, 50), Color(0.4, 0.4, 0.1, 1.0), Color(0.5, 0.5, 0.2, 1.0), 20)
 	back_btn.name = "BackToGang"
-	
-	var style_back = StyleBoxFlat.new()
-	style_back.bg_color = Color(0.4, 0.4, 0.1, 1.0)
-	back_btn.add_theme_stylebox_override("normal", style_back)
-	
-	var style_back_hover = StyleBoxFlat.new()
-	style_back_hover.bg_color = Color(0.5, 0.5, 0.2, 1.0)
-	back_btn.add_theme_stylebox_override("hover", style_back_hover)
-	
-	back_btn.add_theme_font_size_override("font_size", 20)
 	back_btn.pressed.connect(func():
 		back_to_gang.emit()
 		queue_free()
 	)
 	add_child(back_btn)
 	
-	var close_btn = Button.new()
-	close_btn.custom_minimum_size = Vector2(210, 50)
-	close_btn.position = Vector2(470, 1110)
-	close_btn.text = "ЗАКРЫТЬ"
+	var close_btn = UIHelpers.create_close_button("ЗАКРЫТЬ", Vector2(470, 1110), Vector2(210, 50))
 	close_btn.name = "CloseInventory"
-	
-	var style_close = StyleBoxFlat.new()
-	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	close_btn.add_theme_stylebox_override("normal", style_close)
-	
-	var style_close_hover = StyleBoxFlat.new()
-	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
-	close_btn.add_theme_stylebox_override("hover", style_close_hover)
-	
-	close_btn.add_theme_font_size_override("font_size", 20)
 	close_btn.pressed.connect(func(): queue_free())
 	add_child(close_btn)
 
@@ -456,25 +342,14 @@ func show_stats_window():
 	stats_popup.name = "StatsPopup"
 	stats_popup.layer = 210  # ✅ Еще выше
 	get_parent().add_child(stats_popup)
-	
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.position = Vector2(0, 0)
-	overlay.color = Color(0, 0, 0, 0.8)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var overlay = UIHelpers.create_overlay(0.8)
 	stats_popup.add_child(overlay)
-	
-	var bg = ColorRect.new()
-	bg.size = Vector2(680, 950)
-	bg.position = Vector2(20, 165)
-	bg.color = Color(0.05, 0.05, 0.05, 0.98)
+
+	var bg = UIHelpers.create_panel_bg(Vector2(680, 950), Vector2(20, 165))
 	stats_popup.add_child(bg)
-	
-	var title = Label.new()
-	title.text = "📊 СТАТИСТИКА ПЕРСОНАЖА"
-	title.position = Vector2(180, 185)
-	title.add_theme_font_size_override("font_size", 26)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+
+	var title = UIHelpers.create_title("📊 СТАТИСТИКА ПЕРСОНАЖА", Vector2(180, 185), 26)
 	stats_popup.add_child(title)
 	
 	var stats_text = player_stats.get_stats_text()
@@ -485,20 +360,6 @@ func show_stats_window():
 	label.add_theme_color_override("font_color", Color.WHITE)
 	stats_popup.add_child(label)
 	
-	var close_btn = Button.new()
-	close_btn.custom_minimum_size = Vector2(640, 50)
-	close_btn.position = Vector2(40, 1050)
-	close_btn.text = "ЗАКРЫТЬ"
-	
-	var style_close = StyleBoxFlat.new()
-	style_close.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	close_btn.add_theme_stylebox_override("normal", style_close)
-	
-	var style_close_hover = StyleBoxFlat.new()
-	style_close_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
-	close_btn.add_theme_stylebox_override("hover", style_close_hover)
-	
-	close_btn.add_theme_font_size_override("font_size", 20)
+	var close_btn = UIHelpers.create_close_button("ЗАКРЫТЬ", Vector2(40, 1050), Vector2(640, 50))
 	close_btn.pressed.connect(func(): stats_popup.queue_free())
-	
 	stats_popup.add_child(close_btn)

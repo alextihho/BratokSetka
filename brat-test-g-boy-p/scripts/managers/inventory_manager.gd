@@ -1,6 +1,9 @@
 # inventory_manager.gd - Менеджер инвентаря (autoload)
 extends Node
 
+var UIHelpers = preload("res://scripts/helpers/ui_helpers.gd")
+var PlayerDataHelper = preload("res://scripts/helpers/player_data_helper.gd")
+
 # ✅ ГЛАВНАЯ ФУНКЦИЯ для открытия инвентаря члена банды
 func show_inventory_for_member(main_node: Node, member_index: int, gang_members: Array, player_data: Dictionary):
 	# ✅ ОПРЕДЕЛЯЕМ ПРАВИЛЬНЫЙ СЛОВАРЬ ДАННЫХ
@@ -9,22 +12,22 @@ func show_inventory_for_member(main_node: Node, member_index: int, gang_members:
 		current_data = player_data
 		# Инициализируем поля игрока
 		if not player_data.has("equipment"):
-			player_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+			player_data["equipment"] = PlayerDataHelper.create_empty_equipment()
 		if not player_data.has("inventory"):
 			player_data["inventory"] = []
 		if not player_data.has("pockets"):
-			player_data["pockets"] = [null, null, null]
+			player_data["pockets"] = PlayerDataHelper.create_empty_pockets()
 	else:
 		# Инвентарь члена банды
 		if gang_members.size() > member_index:
 			current_data = gang_members[member_index]
 			# Инициализируем поля члена банды
 			if not current_data.has("equipment"):
-				current_data["equipment"] = {"helmet": null, "armor": null, "melee": null, "ranged": null, "gadget": null}
+				current_data["equipment"] = PlayerDataHelper.create_empty_equipment()
 			if not current_data.has("inventory"):
 				current_data["inventory"] = []
 			if not current_data.has("pockets"):
-				current_data["pockets"] = [null, null, null]
+				current_data["pockets"] = PlayerDataHelper.create_empty_pockets()
 		else:
 			current_data = player_data  # Fallback
 
@@ -65,23 +68,13 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 	popup.layer = 220
 	main_node.add_child(popup)
 
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.8)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var overlay = UIHelpers.create_overlay(0.8)
 	popup.add_child(overlay)
 
-	var bg = ColorRect.new()
-	bg.size = Vector2(600, 600)
-	bg.position = Vector2(60, 340)
-	bg.color = Color(0.05, 0.05, 0.05, 0.98)
+	var bg = UIHelpers.create_panel_bg(Vector2(600, 600), Vector2(60, 340))
 	popup.add_child(bg)
 
-	var title = Label.new()
-	title.text = item_name
-	title.position = Vector2(200, 360)
-	title.add_theme_font_size_override("font_size", 24)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+	var title = UIHelpers.create_title(item_name, Vector2(200, 360), 24)
 	popup.add_child(title)
 
 	var desc = Label.new()
@@ -142,20 +135,7 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 
 	# ✅ НОВОЕ: Кнопка ПЕРЕДАТЬ (только если есть другие члены банды)
 	if gang_members.size() > 1:
-		var transfer_btn = Button.new()
-		transfer_btn.custom_minimum_size = Vector2(540, 50)
-		transfer_btn.position = Vector2(90, btn_y)
-		transfer_btn.text = "📦 ПЕРЕДАТЬ"
-		transfer_btn.add_theme_font_size_override("font_size", 20)
-
-		var style_transfer = StyleBoxFlat.new()
-		style_transfer.bg_color = Color(0.3, 0.4, 0.6, 1.0)
-		transfer_btn.add_theme_stylebox_override("normal", style_transfer)
-
-		var style_transfer_hover = StyleBoxFlat.new()
-		style_transfer_hover.bg_color = Color(0.4, 0.5, 0.7, 1.0)
-		transfer_btn.add_theme_stylebox_override("hover", style_transfer_hover)
-
+		var transfer_btn = UIHelpers.create_button("📦 ПЕРЕДАТЬ", Vector2(90, btn_y), Vector2(540, 50), Color(0.3, 0.4, 0.6, 1.0), Color(0.4, 0.5, 0.7, 1.0), 20)
 		transfer_btn.pressed.connect(func():
 			popup.queue_free()
 			show_transfer_menu(main_node, item_name, from_pocket, pocket_index, current_data, member_index, gang_members, player_data)
@@ -163,11 +143,7 @@ func show_item_popup(main_node: Node, item_name: String, from_pocket: bool, pock
 		popup.add_child(transfer_btn)
 		btn_y += 70
 
-	var close_btn = Button.new()
-	close_btn.custom_minimum_size = Vector2(540, 50)
-	close_btn.position = Vector2(90, 850)
-	close_btn.text = "ЗАКРЫТЬ"
-	close_btn.add_theme_font_size_override("font_size", 20)
+	var close_btn = UIHelpers.create_close_button("ЗАКРЫТЬ", Vector2(90, 850), Vector2(540, 50))
 	close_btn.pressed.connect(func(): popup.queue_free())
 	popup.add_child(close_btn)
 
@@ -274,26 +250,13 @@ func show_transfer_menu(main_node: Node, item_name: String, from_pocket: bool, p
 	transfer_menu.layer = 230  # Поверх всего
 	main_node.add_child(transfer_menu)
 
-	# Overlay
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.color = Color(0, 0, 0, 0.8)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var overlay = UIHelpers.create_overlay(0.8)
 	transfer_menu.add_child(overlay)
 
-	# Фон
-	var bg = ColorRect.new()
-	bg.size = Vector2(600, 800)
-	bg.position = Vector2(60, 240)
-	bg.color = Color(0.05, 0.05, 0.05, 0.98)
+	var bg = UIHelpers.create_panel_bg(Vector2(600, 800), Vector2(60, 240))
 	transfer_menu.add_child(bg)
 
-	# Заголовок
-	var title = Label.new()
-	title.text = "📦 ПЕРЕДАТЬ: " + item_name
-	title.position = Vector2(120, 260)
-	title.add_theme_font_size_override("font_size", 24)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+	var title = UIHelpers.create_title("📦 ПЕРЕДАТЬ: " + item_name, Vector2(120, 260), 24)
 	transfer_menu.add_child(title)
 
 	var subtitle = Label.new()
@@ -311,21 +274,8 @@ func show_transfer_menu(main_node: Node, item_name: String, from_pocket: bool, p
 			continue  # Пропускаем себя
 
 		var member = gang_members[i]
-		var member_btn = Button.new()
-		member_btn.custom_minimum_size = Vector2(540, 60)
-		member_btn.position = Vector2(90, btn_y)
-
 		var member_name = member.get("name", "Боец " + str(i))
-		member_btn.text = "👤 " + member_name
-		member_btn.add_theme_font_size_override("font_size", 20)
-
-		var style_member = StyleBoxFlat.new()
-		style_member.bg_color = Color(0.2, 0.3, 0.5, 1.0)
-		member_btn.add_theme_stylebox_override("normal", style_member)
-
-		var style_member_hover = StyleBoxFlat.new()
-		style_member_hover.bg_color = Color(0.3, 0.4, 0.6, 1.0)
-		member_btn.add_theme_stylebox_override("hover", style_member_hover)
+		var member_btn = UIHelpers.create_button("👤 " + member_name, Vector2(90, btn_y), Vector2(540, 60), Color(0.2, 0.3, 0.5, 1.0), Color(0.3, 0.4, 0.6, 1.0), 20)
 
 		var to_index = i
 		member_btn.pressed.connect(func():
@@ -337,20 +287,7 @@ func show_transfer_menu(main_node: Node, item_name: String, from_pocket: bool, p
 		btn_y += 70
 
 	# Кнопка отмены
-	var cancel_btn = Button.new()
-	cancel_btn.custom_minimum_size = Vector2(540, 60)
-	cancel_btn.position = Vector2(90, 950)
-	cancel_btn.text = "ОТМЕНА"
-	cancel_btn.add_theme_font_size_override("font_size", 20)
-
-	var style_cancel = StyleBoxFlat.new()
-	style_cancel.bg_color = Color(0.5, 0.1, 0.1, 1.0)
-	cancel_btn.add_theme_stylebox_override("normal", style_cancel)
-
-	var style_cancel_hover = StyleBoxFlat.new()
-	style_cancel_hover.bg_color = Color(0.6, 0.2, 0.2, 1.0)
-	cancel_btn.add_theme_stylebox_override("hover", style_cancel_hover)
-
+	var cancel_btn = UIHelpers.create_close_button("ОТМЕНА", Vector2(90, 950), Vector2(540, 60))
 	cancel_btn.pressed.connect(func(): transfer_menu.queue_free())
 	transfer_menu.add_child(cancel_btn)
 

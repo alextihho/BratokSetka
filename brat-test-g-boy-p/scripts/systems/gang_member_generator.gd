@@ -1,5 +1,7 @@
 extends Node
 
+var PlayerDataHelper = preload("res://scripts/helpers/player_data_helper.gd")
+
 var first_names = [
 	"Серёга", "Витёк", "Димон", "Санёк", "Максим",
 	"Антон", "Женька", "Артём", "Игорь", "Влад",
@@ -39,15 +41,9 @@ func generate_random_member(min_level: int = 1, max_level: int = 3) -> Dictionar
 		"strength": 5 + level * 2 + randi_range(-1, 2),
 		"agility": 5 + level * 2 + randi_range(-1, 2),
 		"accuracy": 0.50 + (level * 0.05) + randf() * 0.15,  # ✅ ИСПРАВЛЕНО: 0.50-0.90 вместо 5-15
-		"equipment": {
-			"helmet": null,
-			"armor": null,
-			"melee": null,
-			"ranged": null,
-			"gadget": null
-		},
+		"equipment": PlayerDataHelper.create_empty_equipment(),
 		"inventory": [],
-		"pockets": [null, null, null]
+		"pockets": PlayerDataHelper.create_empty_pockets()
 	}
 	
 	if randf() < 0.3:

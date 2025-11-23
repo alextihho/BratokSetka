@@ -1,4 +1,4 @@
-# gang_menu.gd (ИСПРАВЛЕНО - кнопки активации + is_active)
+# gang_menu.gd (ОПТИМИЗИРОВАНО с ui_helpers + player_data_helper)
 extends CanvasLayer
 
 signal member_inventory_clicked(member_index: int)
@@ -7,6 +7,8 @@ signal member_activated(member_index: int, is_active: bool)
 var gang_members = []
 var player_data: Dictionary = {}  # ✅ НОВОЕ: Данные игрока
 var gang_generator
+var UIHelpers = preload("res://scripts/helpers/ui_helpers.gd")
+var PlayerDataHelper = preload("res://scripts/helpers/player_data_helper.gd")
 
 func _ready():
 	layer = 200
@@ -25,29 +27,19 @@ func setup(members, p_data: Dictionary = {}):  # ✅ НОВОЕ: Принима�
 	create_ui()
 
 func create_ui():
-	for child in get_children():
-		child.queue_free()
-	
-	# Overlay
-	var overlay = ColorRect.new()
-	overlay.size = Vector2(720, 1280)
-	overlay.position = Vector2(0, 0)
-	overlay.color = Color(0, 0, 0, 0.7)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	UIHelpers.clear_children(self)
+
+	# Overlay - ОПТИМИЗИРОВАНО
+	var overlay = UIHelpers.create_overlay(0.7)
 	add_child(overlay)
-	
-	var bg = ColorRect.new()
-	bg.size = Vector2(700, 1060)
-	bg.position = Vector2(10, 140)
-	bg.color = Color(0.05, 0.05, 0.05, 0.95)
+
+	# Фон - ОПТИМИЗИРОВАНО
+	var bg = UIHelpers.create_panel_bg(Vector2(700, 1060), Vector2(10, 140))
 	bg.name = "GangBG"
 	add_child(bg)
-	
-	var title = Label.new()
-	title.text = "БАНДА"
-	title.position = Vector2(320, 160)
-	title.add_theme_font_size_override("font_size", 28)
-	title.add_theme_color_override("font_color", Color(1.0, 0.8, 0.2, 1.0))
+
+	# Заголовок - ОПТИМИЗИРОВАНО
+	var title = UIHelpers.create_title("БАНДА", Vector2(320, 160))
 	add_child(title)
 	
 	# ✅ Счётчик активных бойцов
@@ -63,35 +55,17 @@ func create_ui():
 	active_label.add_theme_color_override("font_color", Color(0.3, 1.0, 0.3, 1.0))
 	add_child(active_label)
 	
-	var hire_btn = Button.new()
-	hire_btn.custom_minimum_size = Vector2(200, 50)
-	hire_btn.position = Vector2(480, 155)
-	hire_btn.text = "💰 НАНЯТЬ БОЙЦА"
+	# Кнопка найма - ОПТИМИЗИРОВАНО
+	var hire_btn = UIHelpers.create_action_button("💰 НАНЯТЬ БОЙЦА", Vector2(480, 155), Vector2(200, 50))
 	hire_btn.name = "HireButton"
-	
-	var style_hire = StyleBoxFlat.new()
-	style_hire.bg_color = Color(0.2, 0.5, 0.2, 1.0)
-	hire_btn.add_theme_stylebox_override("normal", style_hire)
-	
-	var style_hire_hover = StyleBoxFlat.new()
-	style_hire_hover.bg_color = Color(0.3, 0.6, 0.3, 1.0)
-	hire_btn.add_theme_stylebox_override("hover", style_hire_hover)
-	
 	hire_btn.add_theme_font_size_override("font_size", 16)
 	hire_btn.pressed.connect(func(): show_hire_menu())
 	add_child(hire_btn)
 
-	# ✅ НОВОЕ: ScrollContainer для списка бандитов
-	var scroll_container = ScrollContainer.new()
-	scroll_container.custom_minimum_size = Vector2(700, 820)  # ✅ Высота для ГГ + 4 бандита
-	scroll_container.position = Vector2(10, 240)
+	# ✅ ScrollContainer - ОПТИМИЗИРОВАНО
+	var scroll_container = UIHelpers.create_scroll_container(Vector2(10, 240), Vector2(700, 820))
 	scroll_container.size = Vector2(700, 820)
-
-	# ✅ НОВОЕ: Настройки для touch scroll (мобильные устройства)
-	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_container.follow_focus = true  # Для touch drag
-
 	add_child(scroll_container)
 
 	# ✅ VBoxContainer для автоматической расстановки карточек
