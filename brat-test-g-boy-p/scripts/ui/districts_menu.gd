@@ -47,12 +47,13 @@ func create_ui():
 	# ScrollContainer для районов
 	var scroll = UIHelpers.create_scroll_container(Vector2(20, 260), Vector2(680, 550))
 	scroll.name = "DistrictsScroll"
-	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS  # ✅ Всегда показывать скроллбар
+	scroll.clip_contents = true  # ✅ ВАЖНО: Обрезать контент за пределами
 	add_child(scroll)
 
 	# VBoxContainer для автоматического размещения
 	var vbox = VBoxContainer.new()
 	vbox.name = "DistrictsVBox"
+	vbox.custom_minimum_size = Vector2(660, 0)  # ✅ ВАЖНО: Минимальная ширина для корректного скролла
 	vbox.add_theme_constant_override("separation", 2)  # ✅ Минимальный spacing для экономии места
 	scroll.add_child(vbox)
 
